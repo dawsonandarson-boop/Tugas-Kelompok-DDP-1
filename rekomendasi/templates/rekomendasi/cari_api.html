@@ -1,0 +1,135 @@
+{% extends 'rekomendasi/base.html' %}
+{% load static %}
+
+{% block title %}Cari Lagu via API — LaguHati{% endblock %}
+
+{% block content %}
+<section class="page-top-header text-center">
+    <div class="hero-badge">
+        <span class="badge-sparkle">🌐</span>
+        <span>Integrasi Database Musik Global (Deezer & iTunes)</span>
+    </div>
+    <h1 class="hero-headline">Cari & Tambah Lagu dari <span class="gradient-text">API Global</span></h1>
+    <p class="hero-caption max-w-600">
+        Ketik nama penyanyi atau judul lagu apa saja. Sistem akan secara otomatis menarik metadata,
+        cover album resolusi tinggi, audio preview 30 detik, serta teks lirik lengkap!
+    </p>
+
+    <form method="get" action="{% url 'cari_lagu_api' %}" class="api-main-search-form">
+        <div class="api-search-input-wrap">
+            <span class="search-prefix-icon">🔍</span>
+            <input
+                type="text"
+                name="q"
+                value="{{ query }}"
+                placeholder="Ketik judul lagu atau artis... (contoh: 'Bernadya', 'Nadin Amizah', 'Dan Sheila on 7')"
+                class="api-modern-input"
+                required
+                autofocus
+            >
+            <button type="submit" class="btn-api-glow">
+                <span>Cari Lagu</span>
+                <span class="sparkle">✦</span>
+            </button>
+        </div>
+    </form>
+</section>
+
+{% if query %}
+<section class="api-results-wrapper">
+    <div class="section-header-modern">
+        <div>
+            <h2 class="section-title-modern">Hasil Pencarian untuk: <span class="gradient-text">"{{ query }}"</span></h2>
+            <p class="section-subtitle-modern">Pilih lagu yang ingin kamu masukkan ke dalam database rekomendasi</p>
+        </div>
+        <span class="badge-count">{{ hasil_api|length }} Lagu Ditemukan</span>
+    </div>
+
+    {% if hasil_api %}
+    <div class="songs-modern-grid">
+        {% for track in hasil_api %}
+        <div class="song-card-modern api-song-card">
+            <div class="card-cover-wrap">
+                {% if track.cover_url %}
+                <img src="{{ track.cover_url }}" alt="{{ track.judul }}" class="card-cover-img" loading="lazy">
+                {% else %}
+                <div class="card-cover-fallback">🎵</div>
+                {% endif %}
+
+                <span class="api-source-tag">{{ track.source }}</span>
+            </div>
+
+            <div class="card-body-modern">
+                <div class="song-meta-header">
+                    <h3 class="card-song-title">{{ track.judul }}</h3>
+                    <p class="card-song-artist">{{ track.artis }}</p>
+                    {% if track.album %}
+                    <p class="card-song-album">💿 {{ track.album }}</p>
+                    {% endif %}
+                </div>
+
+                {% if track.preview_url %}
+                <div class="audio-mini-bar">
+                    <audio controls src="{{ track.preview_url }}" preload="none" class="preview-audio-player"></audio>
+                </div>
+                {% endif %}
+
+                <div class="api-card-actions">
+                    <!-- Opsi 1: 1-Click Auto Import (Langsung Simpan Tanpa Ngetik Apa pun) -->
+                    <form method="post" action="{% url 'auto_import_instant' %}" class="w-100">
+                        {% csrf_token %}
+                        <input type="hidden" name="judul" value="{{ track.judul }}">
+                        <input type="hidden" name="artis" value="{{ track.artis }}">
+                        <input type="hidden" name="album" value="{{ track.album }}">
+                        <input type="hidden" name="cover_url" value="{{ track.cover_url }}">
+                        <input type="hidden" name="preview_url" value="{{ track.preview_url }}">
+
+                        <button type="submit" class="btn-import-pulse">
+                            <span>⚡ 1-Click Auto Simpan</span>
+                            <span>→</span>
+                        </button>
+                    </form>
+
+                    <!-- Opsi 2: Preview & Sesuaikan Lirik/Mood -->
+                    <form method="post" action="{% url 'preview_import_lagu' %}" class="w-100">
+                        {% csrf_token %}
+                        <input type="hidden" name="judul" value="{{ track.judul }}">
+                        <input type="hidden" name="artis" value="{{ track.artis }}">
+                        <input type="hidden" name="album" value="{{ track.album }}">
+                        <input type="hidden" name="cover_url" value="{{ track.cover_url }}">
+                        <input type="hidden" name="preview_url" value="{{ track.preview_url }}">
+
+                        <button type="submit" class="btn-card-detail w-100" style="margin-top: 0.4rem;">
+                            ✏️ Tinjau / Edit Lirik Dulu
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state-modern">
+        <div class="empty-icon-wrap">🤔</div>
+        <h3>Lagu tidak ditemukan di database API</h3>
+        <p>Coba gunakan kata kunci yang lebih spesifik, misalnya nama artis + judul lagunya.</p>
+    </div>
+    {% endif %}
+</section>
+{% else %}
+<!-- Rekomendasi Kata Kunci Populer -->
+<section class="popular-queries-section">
+    <h3 class="popular-title">💡 Kata Kunci Populer yang Sering Dicari:</h3>
+    <div class="popular-chips-wrap">
+        <a href="{% url 'cari_lagu_api' %}?q=Bernadya" class="query-pill">Bernadya</a>
+        <a href="{% url 'cari_lagu_api' %}?q=Nadin+Amizah" class="query-pill">Nadin Amizah</a>
+        <a href="{% url 'cari_lagu_api' %}?q=Mahalini+Sial" class="query-pill">Mahalini - Sial</a>
+        <a href="{% url 'cari_lagu_api' %}?q=Tulus+Hati-Hati+di+Jalan" class="query-pill">Tulus - Hati-Hati di Jalan</a>
+        <a href="{% url 'cari_lagu_api' %}?q=Raim+Laode+Komang" class="query-pill">Raim Laode - Komang</a>
+        <a href="{% url 'cari_lagu_api' %}?q=Pamungkas" class="query-pill">Pamungkas</a>
+        <a href="{% url 'cari_lagu_api' %}?q=Sal+Priadi" class="query-pill">Sal Priadi</a>
+        <a href="{% url 'cari_lagu_api' %}?q=Hindia" class="query-pill">Hindia</a>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

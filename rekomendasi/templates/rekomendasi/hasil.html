@@ -1,0 +1,185 @@
+{% extends 'rekomendasi/base.html' %}
+{% load static %}
+
+{% block title %}Hasil Rekomendasi Moodify{% endblock %}
+
+{% block content %}
+<section class="results-hero">
+    <a href="{% url 'home' %}" class="btn-back-pill">
+        <span>←</span>
+        <span>Kembali ke Beranda</span>
+    </a>
+
+    <div class="results-header-box">
+        <div class="hero-badge">
+            <span class="badge-sparkle">✦</span>
+            <span>Moodify Recommendation Engine • Multi-Parameter Scoring</span>
+        </div>
+        <h1 class="hero-headline">
+            Rekomendasi Musik <span class="gradient-text">Untuk Moodmu</span>
+        </h1>
+
+        <!-- User Curhat & Detected Analysis Breakdown Box (Fitur A) -->
+        <div class="analysis-summary-card">
+            {% if curhat %}
+            <div class="analysis-curhat-line">
+                <span class="curhat-icon">💬</span>
+                <div>
+                    <span class="analysis-label">Input Perasaan Kamu:</span>
+                    <blockquote class="analysis-quote">"{{ curhat }}"</blockquote>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="analysis-chips-grid">
+                <div class="analysis-chip-item">
+                    <span class="chip-title">🎯 Detected Mood:</span>
+                    <span class="chip-val highlight" style="color: {{ mood_dipilih.warna }};">
+                        {{ mood_dipilih.emoji }} {{ mood_dipilih.nama }}
+                    </span>
+                </div>
+                <div class="analysis-chip-item">
+                    <span class="chip-title">⚡ Energy Level:</span>
+                    <span class="chip-val">{{ detected_energy|title }}</span>
+                </div>
+                <div class="analysis-chip-item">
+                    <span class="chip-title">📖 Activity:</span>
+                    <span class="chip-val">{{ detected_activity }}</span>
+                </div>
+                <div class="analysis-chip-item">
+                    <span class="chip-title">🎼 Vibe Rekomendasi:</span>
+                    <span class="chip-val">{{ mood_dipilih.contoh_genre|default:"Upbeat / Mellow" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <p class="results-status-text">
+            Ditemukan <strong>{{ jumlah_hasil }} lagu</strong> dengan skor kecocokan tertinggi berdasarkan kalkulasi bobot sistem Moodify.
+        </p>
+    </div>
+</section>
+
+<!-- Hasil Rekomendasi Cards Grid (Fitur B & F) -->
+<section class="results-cards-section">
+    <div class="songs-modern-grid">
+        {% for item in rekomendasi %}
+        <div class="song-card-modern result-highlight-card" style="animation-delay: {{ forloop.counter0 }}00ms">
+            <div class="card-cover-wrap">
+                {% if item.lagu.get_cover_url %}
+                <img src="{{ item.lagu.get_cover_url }}" alt="{{ item.lagu.judul }}" class="card-cover-img">
+                {% else %}
+                <div class="card-cover-fallback">🎵</div>
+                {% endif %}
+
+                <a href="{% url 'detail_lagu' item.lagu.id %}" class="cover-overlay-link" title="Buka Detail">
+                    <span class="play-btn-circle">▶</span>
+                </a>
+
+                <!-- Tombol Favorit (Fitur D) -->
+                <form method="post" action="{% url 'toggle_favorite' item.lagu.id %}" class="fav-quick-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-fav-circle {% if item.lagu.id in favorite_ids %}active{% endif %}" title="Simpan ke Favorit">
+                        {% if item.lagu.id in favorite_ids %}❤️{% else %}🤍{% endif %}
+                    </button>
+                </form>
+
+                <!-- Skor Match Pill (Fitur B) -->
+                <span class="match-score-badge">
+                    ⭐ Skor: {{ item.skor }}/100
+                </span>
+            </div>
+
+            <div class="card-body-modern">
+                <div class="song-meta-header">
+                    <h3 class="card-song-title">
+                        <a href="{% url 'detail_lagu' item.lagu.id %}">{{ item.lagu.judul }}</a>
+                    </h3>
+                    <p class="card-song-artist">{{ item.lagu.artis }}</p>
+                    <p class="card-song-album">💿 {{ item.lagu.genre }} • ⚡ {{ item.lagu.energy|title }} Energy • {{ item.lagu.bahasa }}</p>
+                </div>
+
+                <!-- Score Breakdown Pill (Fitur B) -->
+                <div class="score-breakdown-box">
+                    <span class="score-item">Mood: {{ item.breakdown.mood_score }}/50</span>
+                    <span class="score-item">Genre: {{ item.breakdown.genre_score }}/20</span>
+                    <span class="score-item">Energy: {{ item.breakdown.energy_score }}/15</span>
+                    <span class="score-item">Bahasa: {{ item.breakdown.bahasa_score }}/15</span>
+                </div>
+
+                <!-- Kutipan Lirik Ngena -->
+                {% if item.kutipan %}
+                <div class="quote-featured-card">
+                    <div class="quote-top-bar">
+                        <span class="quote-sparkle-icon">✨</span>
+                        <span class="quote-tagline">Kutipan Lirik Paling Ngena:</span>
+                    </div>
+                    <blockquote class="quote-featured-text">
+                        "{{ item.kutipan }}"
+                    </blockquote>
+                </div>
+                {% endif %}
+
+                <!-- Audio 30s Preview Player (Fitur F) -->
+                {% if item.lagu.audio_preview_url %}
+                <div class="audio-mini-bar">
+                    <audio controls src="{{ item.lagu.audio_preview_url }}" preload="none" class="preview-audio-player"></audio>
+                </div>
+                {% endif %}
+
+                <!-- Mood Tags -->
+                <div class="card-tag-row">
+                    {% for mood in item.moods %}
+                    <span class="tag-pill" style="--tag-color: {{ mood.warna }}">
+                        {{ mood.emoji }} {{ mood.nama }}
+                    </span>
+                    {% endfor %}
+                </div>
+
+                <!-- External Playback Actions (Fitur F) -->
+                <div class="card-actions-row">
+                    <a href="{% url 'detail_lagu' item.lagu.id %}" class="btn-card-detail">
+                        📖 Detail & Lirik
+                    </a>
+                    <a href="{{ item.lagu.get_spotify_url }}" target="_blank" class="btn-spotify-icon" title="Buka di Spotify">
+                        🟢 Spotify
+                    </a>
+                    <a href="{{ item.lagu.get_youtube_music_url }}" target="_blank" class="btn-ytmusic-icon" title="Buka di YouTube Music">
+                        🔴 YT Music
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state-modern">
+            <div class="empty-icon-wrap">😔</div>
+            <h3>Belum menemukan lagu yang cocok</h3>
+            <p>Coba gunakan kata-kata yang berbeda atau pilih langsung salah satu mood di halaman utama.</p>
+            <a href="{% url 'home' %}" class="btn-discover-glow">← Kembali ke Beranda</a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Curhat Lagi Section -->
+<section class="curhat-again-section">
+    <div class="curhat-again-card">
+        <h3>Mau coba curhatkan perasaan lain?</h3>
+        <p>Moodify akan menganalisis kembali dan memilihkan playlist yang sesuai.</p>
+        <form method="post" action="{% url 'hasil' %}" class="inline-curhat-form">
+            {% csrf_token %}
+            <div class="inline-input-group">
+                <input
+                    type="text"
+                    name="curhat"
+                    class="inline-text-input"
+                    placeholder="Ceritakan perasaanmu yang lain..."
+                    required
+                >
+                <button type="submit" class="btn-discover-glow sm">
+                    🔍 Cari Lagu Lagi
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

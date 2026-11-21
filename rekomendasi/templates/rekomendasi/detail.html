@@ -1,0 +1,177 @@
+{% extends 'rekomendasi/base.html' %}
+{% load static %}
+
+{% block title %}{{ lagu.judul }} — {{ lagu.artis }} | Moodify{% endblock %}
+
+{% block content %}
+<section class="detail-nav-top">
+    <a href="javascript:history.back()" class="btn-back-pill">
+        <span>←</span>
+        <span>Kembali</span>
+    </a>
+</section>
+
+<!-- Now Playing & Lyrics Dashboard (Fitur F) -->
+<section class="player-dashboard-layout">
+    <!-- Left Column: Song Player & External Playback -->
+    <div class="player-left-col">
+        <div class="now-playing-card">
+            <!-- Cover Art with Favorite Button (Fitur D) -->
+            <div class="now-playing-cover">
+                {% if lagu.get_cover_url %}
+                <img src="{{ lagu.get_cover_url }}" alt="{{ lagu.judul }}" class="cover-image-large">
+                {% else %}
+                <div class="cover-fallback-large">🎵</div>
+                {% endif %}
+
+                <!-- Tombol Favorit (Fitur D) -->
+                <form method="post" action="{% url 'toggle_favorite' lagu.id %}" class="fav-quick-form in-cover">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-fav-large {% if is_favorited %}active{% endif %}" title="Simpan ke Favorit">
+                        {% if is_favorited %}❤️ Disimpan di Favorit{% else %}🤍 Tambah ke Favorit{% endif %}
+                    </button>
+                </form>
+            </div>
+
+            <!-- Song Info -->
+            <div class="now-playing-info">
+                <span class="now-playing-badge">NOW PLAYING</span>
+                <h1 class="now-playing-title">{{ lagu.judul }}</h1>
+                <p class="now-playing-artist">{{ lagu.artis }}</p>
+                {% if lagu.album %}
+                <p class="now-playing-album">💿 Album: <strong>{{ lagu.album }}</strong> {% if lagu.tahun %}({{ lagu.tahun }}){% endif %}</p>
+                {% endif %}
+            </div>
+
+            <!-- 30-Second Audio Player (Fitur F) -->
+            {% if lagu.audio_preview_url %}
+            <div class="audio-dashboard-player">
+                <div class="audio-player-header">
+                    <span class="player-title">🎧 Cuplikan Audio Resmi (30s)</span>
+                    <span class="player-live-dot"></span>
+                </div>
+                <audio controls src="{{ lagu.audio_preview_url }}" autoplay class="main-audio-player"></audio>
+            </div>
+            {% endif %}
+
+            <!-- External Playback Options (Fitur F) -->
+            <div class="external-playback-box">
+                <span class="vibe-title">Dengarkan Lagu Penuh di Platform Lain:</span>
+                <div class="external-btns-row">
+                    <a href="{{ lagu.get_spotify_url }}" target="_blank" class="btn-platform-spotify">
+                        <span>🟢 Buka di Spotify</span>
+                        <span class="external-icon">↗</span>
+                    </a>
+                    <a href="{{ lagu.get_youtube_music_url }}" target="_blank" class="btn-platform-ytmusic">
+                        <span>🔴 YouTube Music</span>
+                        <span class="external-icon">↗</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- The Vibe / Parameter Metrics (Fitur B) -->
+            <div class="vibe-metrics-box">
+                <span class="vibe-title">The Vibe & Characteristics</span>
+                <div class="vibe-tags-wrap">
+                    {% for mood in moods %}
+                    <span class="tag-pill lg" style="--tag-color: {{ mood.warna }}">
+                        {{ mood.emoji }} {{ mood.nama }}
+                    </span>
+                    {% endfor %}
+                    <span class="vibe-pill lg">⚡ Energy: {{ lagu.energy|title }}</span>
+                    <span class="vibe-pill lg">🌐 Bahasa: {{ lagu.bahasa }}</span>
+                    <span class="vibe-pill lg">🎸 {{ lagu.genre }}</span>
+                </div>
+            </div>
+
+            <!-- YouTube Music Video Button -->
+            {% if lagu.get_youtube_url %}
+            <a href="{{ lagu.get_youtube_url }}" target="_blank" class="btn-youtube-glow">
+                <span>▶ Tonton Video Klip Resmi di YouTube</span>
+                <span class="external-icon">↗</span>
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- YouTube Video Embed (Fitur F) -->
+        {% if lagu.get_youtube_embed_url %}
+        <div class="video-embed-card">
+            <h3 class="video-card-title">🎬 Video Musik Resmi</h3>
+            <div class="video-frame-wrap">
+                <iframe
+                    src="{{ lagu.get_youtube_embed_url }}"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                ></iframe>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Column: Quotes & Full Lyrics -->
+    <div class="player-right-col">
+        {% if kutipan_list %}
+        <div class="quotes-highlight-card">
+            <div class="card-section-header">
+                <span class="sparkle">✦</span>
+                <h2>Kutipan Lirik Paling Ngena</h2>
+            </div>
+            <div class="quotes-stack">
+                {% for kutipan in kutipan_list %}
+                <div class="quote-card-item">
+                    <span class="quote-big-mark">❝</span>
+                    <blockquote class="quote-text-body">{{ kutipan.teks }}</blockquote>
+                    {% if kutipan.penjelasan %}
+                    <div class="quote-meaning-box">
+                        <span class="meaning-icon">💭</span>
+                        <p class="meaning-text">{{ kutipan.penjelasan }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Full Lyrics Sheet -->
+        <div class="lyrics-sheet-card">
+            <div class="card-section-header">
+                <span class="sparkle">📝</span>
+                <h2>Lirik Lengkap</h2>
+            </div>
+            <div class="lyrics-sheet-content">
+                {{ lagu.lirik|linebreaksbr }}
+            </div>
+        </div>
+
+        <!-- Lagu Serupa Sidebar (Fitur C: Song Discovery) -->
+        {% if lagu_serupa %}
+        <div class="similar-songs-card">
+            <div class="card-section-header">
+                <span class="sparkle">🎵</span>
+                <h2>Lagu Serupa dengan Vibe yang Sama</h2>
+            </div>
+            <div class="similar-songs-list">
+                {% for similar in lagu_serupa %}
+                <a href="{% url 'detail_lagu' similar.id %}" class="similar-song-item">
+                    <div class="similar-thumb">
+                        {% if similar.get_cover_url %}
+                        <img src="{{ similar.get_cover_url }}" alt="{{ similar.judul }}">
+                        {% else %}
+                        <span>🎵</span>
+                        {% endif %}
+                    </div>
+                    <div class="similar-meta">
+                        <span class="similar-title">{{ similar.judul }}</span>
+                        <span class="similar-artist">{{ similar.artis }}</span>
+                    </div>
+                    <span class="similar-arrow">→</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends 'rekomendasi/base.html' %}
+{% load static %}
+
+{% block title %}Lagu Favorit Saya — Moodify{% endblock %}
+
+{% block content %}
+<section class="page-top-header">
+    <div class="header-text-group">
+        <div class="hero-badge">
+            <span class="badge-sparkle">❤️</span>
+            <span>Fitur Koleksi Pribadi (Favorite Songs)</span>
+        </div>
+        <h1 class="hero-headline">Koleksi <span class="gradient-text">Lagu Favorit</span></h1>
+        <p class="hero-caption">
+            Daftar lagu yang kamu simpan untuk didengarkan kapan saja sesuai dengan suasana hatimu.
+        </p>
+    </div>
+    <div class="header-action-group">
+        <span class="badge-count">{{ total_favorites }} Lagu Tersimpan</span>
+    </div>
+</section>
+
+{% if favorites %}
+<section class="songs-catalog-section">
+    <div class="songs-modern-grid">
+        {% for fav in favorites %}
+        <div class="song-card-modern">
+            <div class="card-cover-wrap">
+                {% if fav.lagu.get_cover_url %}
+                <img src="{{ fav.lagu.get_cover_url }}" alt="{{ fav.lagu.judul }}" class="card-cover-img" loading="lazy">
+                {% else %}
+                <div class="card-cover-fallback">🎵</div>
+                {% endif %}
+
+                <a href="{% url 'detail_lagu' fav.lagu.id %}" class="cover-overlay-link" title="Buka Detail">
+                    <span class="play-btn-circle">▶</span>
+                </a>
+
+                <!-- Tombol Hapus dari Favorit -->
+                <form method="post" action="{% url 'toggle_favorite' fav.lagu.id %}" class="fav-quick-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-fav-circle active" title="Hapus dari Favorit">
+                        ❤️
+                    </button>
+                </form>
+
+                <span class="alunan-badge">Disimpan: {{ fav.created_at|date:"d M" }}</span>
+            </div>
+
+            <div class="card-body-modern">
+                <div class="song-meta-header">
+                    <h3 class="card-song-title">
+                        <a href="{% url 'detail_lagu' fav.lagu.id %}">{{ fav.lagu.judul }}</a>
+                    </h3>
+                    <p class="card-song-artist">{{ fav.lagu.artis }}</p>
+                    <p class="card-song-album">🎸 {{ fav.lagu.genre }} • ⚡ {{ fav.lagu.energy|title }}</p>
+                </div>
+
+                {% if fav.lagu.audio_preview_url %}
+                <div class="audio-mini-bar">
+                    <audio controls src="{{ fav.lagu.audio_preview_url }}" preload="none" class="preview-audio-player"></audio>
+                </div>
+                {% endif %}
+
+                <div class="card-tag-row">
+                    {% for m in fav.lagu.moods.all %}
+                    <span class="tag-pill" style="--tag-color: {{ m.warna }}">
+                        {{ m.emoji }} {{ m.nama }}
+                    </span>
+                    {% endfor %}
+                </div>
+
+                <div class="card-actions-row">
+                    <a href="{% url 'detail_lagu' fav.lagu.id %}" class="btn-card-detail">
+                        📖 Buka Detail
+                    </a>
+                    <a href="{{ fav.lagu.get_spotify_url }}" target="_blank" class="btn-spotify-icon" title="Buka di Spotify">
+                        🟢 Spotify
+                    </a>
+                    <a href="{{ fav.lagu.get_youtube_url }}" target="_blank" class="btn-card-yt">
+                        ▶ YouTube
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<div class="empty-state-modern">
+    <div class="empty-icon-wrap">🤍</div>
+    <h3>Belum ada lagu favorit</h3>
+    <p>Kamu belum menandai lagu apa pun sebagai favorit. Jelajahi lagu dan klik ikon hati ❤️ pada lagu yang kamu suka!</p>
+    <a href="{% url 'daftar_lagu' %}" class="btn-discover-glow">
+        🔍 Jelajahi Song Discovery
+    </a>
+</div>
+{% endif %}
+{% endblock %}

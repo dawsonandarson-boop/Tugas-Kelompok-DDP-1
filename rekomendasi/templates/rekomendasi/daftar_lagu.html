@@ -1,0 +1,170 @@
+{% extends 'rekomendasi/base.html' %}
+{% load static %}
+
+{% block title %}Song Discovery — Moodify{% endblock %}
+
+{% block content %}
+<section class="page-top-header">
+    <div class="header-text-group">
+        <div class="hero-badge">
+            <span class="badge-sparkle">🔍</span>
+            <span>Fitur C: Song Discovery Engine</span>
+        </div>
+        <h1 class="hero-headline">Song <span class="gradient-text">Discovery</span></h1>
+        <p class="hero-caption">
+            Jelajahi dan temukan lagu berdasarkan <strong>Mood, Genre, Energy, Bahasa</strong>, atau cari langsung berdasarkan judul dan artis.
+        </p>
+    </div>
+    <div class="header-action-group">
+        <a href="{% url 'cari_lagu_api' %}" class="btn-api-glow">
+            <span class="sparkle">⚡</span>
+            <span>+ Import Lagu dari API</span>
+        </a>
+    </div>
+</section>
+
+<!-- Filter Controls Card (Multi-Parameter Discovery) -->
+<section class="filter-controls-card">
+    <form method="get" action="{% url 'daftar_lagu' %}" class="filter-form-grid">
+        <!-- Search bar -->
+        <div class="search-input-wrapper">
+            <span class="search-prefix-icon">🔍</span>
+            <input
+                type="text"
+                name="q"
+                value="{{ query }}"
+                placeholder="Cari berdasarkan judul lagu atau nama artis..."
+                class="modern-search-input"
+            >
+            {% if query or mood_terpilih or genre_terpilih or energy_terpilih or bahasa_terpilih %}
+            <a href="{% url 'daftar_lagu' %}" class="clear-search-btn" title="Reset Filter">Reset ✕</a>
+            {% endif %}
+            <button type="submit" class="btn-search-pill">Cari</button>
+        </div>
+
+        <!-- Dropdowns Parameter Bar -->
+        <div class="discovery-params-bar">
+            <!-- Genre Filter -->
+            <select name="genre" class="discovery-select" onchange="this.form.submit()">
+                <option value="">🎸 Semua Genre</option>
+                {% for g in all_genres %}
+                <option value="{{ g }}" {% if genre_terpilih == g %}selected{% endif %}>{{ g }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Energy Filter -->
+            <select name="energy" class="discovery-select" onchange="this.form.submit()">
+                <option value="">⚡ Semua Energy</option>
+                <option value="low" {% if energy_terpilih == 'low' %}selected{% endif %}>Low (Tenang)</option>
+                <option value="medium" {% if energy_terpilih == 'medium' %}selected{% endif %}>Medium (Sedang)</option>
+                <option value="high" {% if energy_terpilih == 'high' %}selected{% endif %}>High (Bersemangat)</option>
+            </select>
+
+            <!-- Bahasa Filter -->
+            <select name="bahasa" class="discovery-select" onchange="this.form.submit()">
+                <option value="">🌐 Semua Bahasa</option>
+                <option value="Indonesia" {% if bahasa_terpilih == 'Indonesia' %}selected{% endif %}>Indonesia</option>
+                <option value="English" {% if bahasa_terpilih == 'English' %}selected{% endif %}>English</option>
+                <option value="Instrumental" {% if bahasa_terpilih == 'Instrumental' %}selected{% endif %}>Instrumental</option>
+            </select>
+        </div>
+
+        <!-- 8 Mood Filter Chips -->
+        <div class="mood-chips-scroll">
+            <a href="{% url 'daftar_lagu' %}{% if query %}?q={{ query }}{% endif %}" class="filter-chip {% if not mood_terpilih %}active{% endif %}">
+                Semua Mood
+            </a>
+            {% for mood in moods %}
+            <a
+                href="{% url 'daftar_lagu' %}?mood={{ mood.id }}{% if query %}&q={{ query }}{% endif %}{% if genre_terpilih %}&genre={{ genre_terpilih }}{% endif %}{% if energy_terpilih %}&energy={{ energy_terpilih }}{% endif %}"
+                class="filter-chip {% if mood_terpilih == mood.id|stringformat:'s' %}active{% endif %}"
+                style="--chip-theme: {{ mood.warna }}"
+            >
+                {{ mood.emoji }} {{ mood.nama }}
+            </a>
+            {% endfor %}
+        </div>
+    </form>
+</section>
+
+<!-- Song Discovery Grid -->
+<section class="songs-catalog-section">
+    <div class="section-header-modern">
+        <span class="badge-count">Menampilkan {{ total_lagu }} Lagu</span>
+    </div>
+
+    <div class="songs-modern-grid">
+        {% for lagu in lagu_list %}
+        <div class="song-card-modern">
+            <div class="card-cover-wrap">
+                {% if lagu.get_cover_url %}
+                <img src="{{ lagu.get_cover_url }}" alt="{{ lagu.judul }}" class="card-cover-img" loading="lazy">
+                {% else %}
+                <div class="card-cover-fallback">🎵</div>
+                {% endif %}
+
+                <a href="{% url 'detail_lagu' lagu.id %}" class="cover-overlay-link" title="Buka Detail">
+                    <span class="play-btn-circle">▶</span>
+                </a>
+
+                <!-- Tombol Favorit (Fitur D) -->
+                <form method="post" action="{% url 'toggle_favorite' lagu.id %}" class="fav-quick-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-fav-circle {% if lagu.id in favorite_ids %}active{% endif %}" title="Simpan ke Favorit">
+                        {% if lagu.id in favorite_ids %}❤️{% else %}🤍{% endif %}
+                    </button>
+                </form>
+
+                <span class="alunan-badge">⚡ {{ lagu.energy|title }}</span>
+            </div>
+
+            <div class="card-body-modern">
+                <div class="song-meta-header">
+                    <h3 class="card-song-title">
+                        <a href="{% url 'detail_lagu' lagu.id %}">{{ lagu.judul }}</a>
+                    </h3>
+                    <p class="card-song-artist">{{ lagu.artis }}</p>
+                    <p class="card-song-album">🎸 {{ lagu.genre }} • {{ lagu.bahasa }}</p>
+                </div>
+
+                <!-- Audio 30s Preview Player (Fitur F) -->
+                {% if lagu.audio_preview_url %}
+                <div class="audio-mini-bar">
+                    <audio controls src="{{ lagu.audio_preview_url }}" preload="none" class="preview-audio-player"></audio>
+                </div>
+                {% endif %}
+
+                <div class="card-tag-row">
+                    {% for m in lagu.moods.all %}
+                    <span class="tag-pill" style="--tag-color: {{ m.warna }}">
+                        {{ m.emoji }} {{ m.nama }}
+                    </span>
+                    {% endfor %}
+                </div>
+
+                <div class="card-actions-row">
+                    <a href="{% url 'detail_lagu' lagu.id %}" class="btn-card-detail">
+                        📖 Lirik
+                    </a>
+                    <a href="{{ lagu.get_spotify_url }}" target="_blank" class="btn-spotify-icon" title="Buka di Spotify">
+                        🟢 Spotify
+                    </a>
+                    <a href="{{ lagu.get_youtube_url }}" target="_blank" class="btn-card-yt">
+                        ▶ YouTube
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state-modern">
+            <div class="empty-icon-wrap">🔍</div>
+            <h3>Lagu tidak ditemukan</h3>
+            <p>Tidak ada lagu dengan kriteria pencarian ini di database lokal. Mau cari di database global?</p>
+            <a href="{% url 'cari_lagu_api' %}{% if query %}?q={{ query }}{% endif %}" class="btn-discover-glow">
+                ⚡ Cari "{{ query }}" di API Global
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

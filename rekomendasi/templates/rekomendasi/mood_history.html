@@ -1,0 +1,79 @@
+{% extends 'rekomendasi/base.html' %}
+{% load static %}
+
+{% block title %}Riwayat Mood (Mood History) — Moodify{% endblock %}
+
+{% block content %}
+<section class="page-top-header">
+    <div class="header-text-group">
+        <div class="hero-badge">
+            <span class="badge-sparkle">🕒</span>
+            <span>Fitur Mood History Log</span>
+        </div>
+        <h1 class="hero-headline">Riwayat Mood & <span class="gradient-text">Rekomendasi</span></h1>
+        <p class="hero-caption">
+            Catatan perjalanan perasaanmu saat menggunakan Moodify. Tujuannya bukan untuk menilai perasaan,
+            melainkan membantu kamu menemukan kembali lagu-lagu yang pernah direkomendasikan.
+        </p>
+    </div>
+    <div class="header-action-group">
+        <span class="badge-count">{{ total_history }} Sesi Tersimpan</span>
+    </div>
+</section>
+
+{% if history_list %}
+<section class="history-log-section">
+    <div class="history-timeline-stack">
+        {% for entry in history_list %}
+        <div class="history-timeline-card" style="--history-theme: {{ entry.detected_mood.warna|default:'#a855f7' }}">
+            <div class="timeline-header">
+                <div class="timeline-mood-badge">
+                    <span class="t-emoji">{{ entry.detected_mood.emoji|default:"🎧" }}</span>
+                    <span class="t-name">{{ entry.detected_mood.nama|default:"Pencarian Bebas" }}</span>
+                </div>
+                <div class="timeline-meta-tags">
+                    {% if entry.energy_level %}
+                    <span class="t-tag">⚡ {{ entry.energy_level|title }} Energy</span>
+                    {% endif %}
+                    {% if entry.activity %}
+                    <span class="t-tag">📖 {{ entry.activity }}</span>
+                    {% endif %}
+                    <span class="t-time">🕒 {{ entry.created_at|date:"l, d F Y • H:i" }}</span>
+                </div>
+            </div>
+
+            {% if entry.input_text %}
+            <div class="timeline-quote-box">
+                <span class="quote-label">Curhatan saat itu:</span>
+                <p class="quote-content">"{{ entry.input_text }}"</p>
+            </div>
+            {% endif %}
+
+            {% if entry.recommended_songs.exists %}
+            <div class="timeline-songs-box">
+                <span class="songs-label">Lagu yang direkomendasikan:</span>
+                <div class="timeline-songs-grid">
+                    {% for song in entry.recommended_songs.all %}
+                    <a href="{% url 'detail_lagu' song.id %}" class="mini-song-pill">
+                        <span class="s-note">🎵</span>
+                        <span class="s-title">{{ song.judul }} — <em>{{ song.artis }}</em></span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<div class="empty-state-modern">
+    <div class="empty-icon-wrap">🕒</div>
+    <h3>Belum ada riwayat mood</h3>
+    <p>Setiap kali kamu curhat atau memilih mood di Moodify, riwayatnya akan tersimpan rapi di sini.</p>
+    <a href="{% url 'home' %}" class="btn-discover-glow">
+        🎧 Mulai Curhat Sekarang
+    </a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Moodify{% endblock %} — Find your music, follow your mood.</title>
+    <link rel="stylesheet" href="{% static 'rekomendasi/css/style.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,700;1,400&display=swap" rel="stylesheet">
+</head>
+<body class="nocturne-theme">
+    <!-- Ambient Background Glow -->
+    <div class="ambient-canvas">
+        <div class="glow-orb orb-primary"></div>
+        <div class="glow-orb orb-secondary"></div>
+        <div class="glow-orb orb-tertiary"></div>
+    </div>
+
+    <!-- Floating Top Navigation -->
+    <header class="navbar-wrapper">
+        <nav class="navbar-pill">
+            <a href="{% url 'home' %}" class="brand-link">
+                <div class="brand-icon-wave">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+                <div class="brand-text-group">
+                    <span class="brand-name">Moodify</span>
+                    <span class="brand-tag">Follow your mood</span>
+                </div>
+            </a>
+
+            <div class="nav-menu">
+                <a href="{% url 'home' %}" class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                    <span class="nav-icon">🎧</span>
+                    <span>Curhat & Mood</span>
+                </a>
+                <a href="{% url 'daftar_lagu' %}" class="nav-item {% if request.resolver_match.url_name == 'daftar_lagu' %}active{% endif %}">
+                    <span class="nav-icon">🔍</span>
+                    <span>Discovery</span>
+                </a>
+                <a href="{% url 'list_favorites' %}" class="nav-item {% if request.resolver_match.url_name == 'list_favorites' %}active{% endif %}">
+                    <span class="nav-icon">❤️</span>
+                    <span>Favorit</span>
+                </a>
+                <a href="{% url 'mood_history' %}" class="nav-item {% if request.resolver_match.url_name == 'mood_history' %}active{% endif %}">
+                    <span class="nav-icon">🕒</span>
+                    <span>Riwayat</span>
+                </a>
+            </div>
+
+            <div class="nav-actions">
+                <a href="{% url 'cari_lagu_api' %}" class="btn-api-glow">
+                    <span class="sparkle">✦</span>
+                    <span>+ Lagu dari API</span>
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    {% if messages %}
+    <div class="container message-container">
+        {% for message in messages %}
+        <div class="alert-pill alert-{{ message.tags }}">
+            <span class="alert-icon">✨</span>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="container main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer-modern">
+        <div class="container footer-inner">
+            <div class="footer-brand">
+                <div class="brand-icon-wave sm">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+                <span class="footer-title">Moodify</span>
+                <span class="footer-desc">Find your music, follow your mood. Platform rekomendasi musik berbasis analisis emosi & multi-parameter.</span>
+            </div>
+            <p class="footer-meta">Tugas Kelompok DDP 1 • Django & Smart Rule-Based Scoring Engine</p>
+        </div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,177 @@
+{% extends 'rekomendasi/base.html' %}
+{% load static %}
+
+{% block title %}Konfirmasi & Analisis Lagu — LaguHati{% endblock %}
+
+{% block content %}
+<section class="page-top-header">
+    <a href="javascript:history.back()" class="btn-back-pill">
+        <span>←</span>
+        <span>Kembali ke Pencarian</span>
+    </a>
+    <div class="header-text-group mt-1">
+        <div class="hero-badge">
+            <span class="badge-sparkle">✨</span>
+            <span>Analisis Otomatis Lirik & Mood</span>
+        </div>
+        <h1 class="hero-headline">Konfirmasi & <span class="gradient-text">Simpan Lagu</span></h1>
+        <p class="hero-caption">
+            Lirik dan metadata telah berhasil ditarik dari API. Sistem juga telah menganalisis emosi lagu ini.
+            Kamu bisa memeriksa atau mengedit sebelum menyimpannya ke database.
+        </p>
+    </div>
+</section>
+
+<form method="post" action="{% url 'simpan_lagu_api' %}" class="import-confirm-form">
+    {% csrf_token %}
+
+    <div class="confirm-two-col-layout">
+        <!-- Sidebar Kiri: Media & Cover -->
+        <div class="confirm-left-sidebar">
+            <div class="confirm-media-card">
+                <div class="confirm-cover-wrapper">
+                    {% if cover_url %}
+                    <img src="{{ cover_url }}" alt="{{ judul }}" class="confirm-cover-image">
+                    {% else %}
+                    <div class="confirm-cover-fallback">🎵</div>
+                    {% endif %}
+                </div>
+
+                <input type="hidden" name="cover_url" value="{{ cover_url }}">
+                <input type="hidden" name="audio_preview_url" value="{{ preview_url }}">
+
+                {% if preview_url %}
+                <div class="confirm-audio-player-box">
+                    <span class="preview-label">🎧 Preview Lagu (30s):</span>
+                    <audio controls src="{{ preview_url }}" class="preview-audio-player"></audio>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="confirm-subcard">
+                <div class="form-group-modern">
+                    <label class="form-label-modern">ID Video YouTube:</label>
+                    <input
+                        type="text"
+                        name="youtube_id"
+                        value="{{ youtube_id }}"
+                        placeholder="Contoh: b0ZBBjViV8Y"
+                        class="modern-input"
+                    >
+                    <span class="form-tip">Otomatis terisi jika klip resmi ditemukan di YouTube.</span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Alunan Musik:</label>
+                    <select name="alunan" class="modern-input">
+                        <option value="sedih" selected>Mellow / Sedih</option>
+                        <option value="pelan">Pelan / Akustik</option>
+                        <option value="semangat">Upbeat / Semangat</option>
+                        <option value="ceria">Ceria / Senang</option>
+                    </select>
+                </div>
+
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Genre:</label>
+                    <input type="text" name="genre" value="Indo Pop" class="modern-input">
+                </div>
+            </div>
+        </div>
+
+        <!-- Kolom Kanan: Detail & Lirik -->
+        <div class="confirm-right-main">
+            <div class="form-row-grid">
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Judul Lagu:</label>
+                    <input type="text" name="judul" value="{{ judul }}" required class="modern-input">
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Penyanyi / Artis:</label>
+                    <input type="text" name="artis" value="{{ artis }}" required class="modern-input">
+                </div>
+            </div>
+
+            <div class="form-row-grid">
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Album:</label>
+                    <input type="text" name="album" value="{{ album }}" class="modern-input">
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Tahun Rilis:</label>
+                    <input type="number" name="tahun" placeholder="2023" class="modern-input">
+                </div>
+            </div>
+
+            <!-- Mood Checkboxes -->
+            <div class="form-group-modern">
+                <label class="form-label-modern">
+                    🎯 Kategori Mood (Sistem Otomatis Mencocokkan dari Lirik):
+                </label>
+                <div class="mood-check-grid">
+                    {% for mood in all_moods %}
+                    <label class="mood-check-card" style="--mood-theme: {{ mood.warna }}">
+                        <input
+                            type="checkbox"
+                            name="moods"
+                            value="{{ mood.id }}"
+                            {% if mood.id in suggested_mood_ids %}checked{% endif %}
+                        >
+                        <span class="custom-checkbox"></span>
+                        <span class="mood-check-label-text">{{ mood.emoji }} {{ mood.nama }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Kutipan Lirik -->
+            <div class="form-group-modern">
+                <label class="form-label-modern">
+                    ✨ Kutipan Lirik Paling Ngena (Kutipan Rekomendasi):
+                </label>
+                <textarea
+                    name="kutipan_teks"
+                    rows="2"
+                    class="modern-input"
+                    placeholder="Baris lirik paling ngena..."
+                >{{ top_quotes }}</textarea>
+                <span class="form-tip">Kutipan ini akan muncul saat seseorang curhat dengan perasaan serupa.</span>
+            </div>
+
+            <div class="form-group-modern">
+                <label class="form-label-modern">Makna Kutipan:</label>
+                <input
+                    type="text"
+                    name="kutipan_penjelasan"
+                    placeholder="Contoh: Menggambarkan perasaan minder karena tidak setara"
+                    class="modern-input"
+                >
+            </div>
+
+            <!-- Lirik Lengkap -->
+            <div class="form-group-modern">
+                <div class="lyrics-header-flex">
+                    <label class="form-label-modern">📝 Teks Lirik Lengkap:</label>
+                    {% if lirik %}
+                    <span class="status-badge-success">✅ Berhasil Diambil dari LRCLIB</span>
+                    {% else %}
+                    <span class="status-badge-warn">⚠️ Belum Ada (Bisa Diketik Manual)</span>
+                    {% endif %}
+                </div>
+                <textarea
+                    name="lirik"
+                    rows="9"
+                    class="modern-input font-mono"
+                    placeholder="Lirik lagu..."
+                >{{ lirik }}</textarea>
+            </div>
+
+            <div class="confirm-submit-area">
+                <button type="submit" class="btn-discover-glow w-100">
+                    <span>💾 Simpan Lagu Ini ke Database Rekomendasi</span>
+                    <span class="btn-arrow">→</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,266 @@
+{% extends 'rekomendasi/base.html' %}
+{% load static %}
+
+{% block title %}Moodify — Find your music, follow your mood.{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-nocturne">
+    <div class="hero-badge">
+        <span class="badge-sparkle">✦</span>
+        <span>Moodify — Find your music, follow your mood.</span>
+    </div>
+
+    <h1 class="hero-headline">
+        Find Your Music, <span class="gradient-text">Follow Your Mood</span>
+    </h1>
+    <p class="hero-caption">
+        Kamu tidak perlu paham teori atau kategori musik. Cukup ceritakan apa yang kamu rasakan,
+        atau pilih salah satu dari <strong>8 mood utama</strong> di bawah. Moodify akan memilihkan alunan musik terbaik untukmu.
+    </p>
+
+    <!-- Glassmorphic Curhat Card (Fitur A: Mood Detection from Text) -->
+    <div class="curhat-glass-card">
+        <form method="post" action="{% url 'hasil' %}" id="curhatForm">
+            {% csrf_token %}
+            <div class="input-glow-wrapper">
+                <textarea
+                    name="curhat"
+                    id="curhatTextarea"
+                    class="curhat-glow-textarea"
+                    placeholder="Ceritakan perasaanmu... Misalnya: 'Hari ini capek banget setelah kuliah. Aku ingin mendengarkan sesuatu yang tenang sambil mengerjakan tugas.'"
+                    rows="3"
+                    required
+                ></textarea>
+                <input type="hidden" name="mood_id" id="selectedMoodId" value="">
+            </div>
+
+            <!-- Quick Feeling Prompts -->
+            <div class="quick-prompts-bar">
+                <span class="quick-label">⚡ Contoh curhat:</span>
+                <button type="button" class="prompt-chip" onclick="fillPrompt('Hari ini capek banget setelah kuliah. Aku ingin mendengarkan sesuatu yang tenang sambil mengerjakan tugas.')">
+                    🌿 Capek Kuliah, Butuh Tenang
+                </button>
+                <button type="button" class="prompt-chip" onclick="fillPrompt('Aku merasa minder dan nggak setara sama orang yang aku suka, dia terlalu sempurna buat aku...')">
+                    🥺 Minder & Ga Setara
+                </button>
+                <button type="button" class="prompt-chip" onclick="fillPrompt('Aku lagi senang banget hari ini, pengen lagu yang asik dan ceria!')">
+                    😊 Lagi Senang Banget
+                </button>
+                <button type="button" class="prompt-chip" onclick="fillPrompt('Aku kangen masa-masa SMA dulu, pengen denger lagu yang bawa kenangan lama.')">
+                    📷 Kangen Masa SMA
+                </button>
+                <button type="button" class="prompt-chip" onclick="fillPrompt('Lagi kesal dan muak banget sama semua masalah hari ini, pengen lagu yang berontak!')">
+                    🔥 Kesal & Frustrasi
+                </button>
+            </div>
+
+            <!-- Multi-Parameter Filters (Fitur B: Optional Multi-Parameter Tuning) -->
+            <div class="multi-param-row">
+                <span class="param-label">⚙️ Preferensi Tambahan (Opsional):</span>
+                <div class="param-inputs-group">
+                    <select name="energy" class="param-select">
+                        <option value="">⚡ Semua Energy</option>
+                        <option value="low">Low (Tenang / Santai)</option>
+                        <option value="medium">Medium (Sedang)</option>
+                        <option value="high">High (Bersemangat)</option>
+                    </select>
+
+                    <select name="bahasa" class="param-select">
+                        <option value="">🌐 Semua Bahasa</option>
+                        <option value="Indonesia">Bahasa Indonesia</option>
+                        <option value="English">English</option>
+                        <option value="Instrumental">Instrumental / No Vocals</option>
+                    </select>
+
+                    <select name="genre" class="param-select">
+                        <option value="">🎸 Semua Genre</option>
+                        <option value="Pop">Pop</option>
+                        <option value="lo-fi">Lo-Fi / Chill</option>
+                        <option value="acoustic">Acoustic</option>
+                        <option value="rock">Rock</option>
+                        <option value="R&B">R&B / Soul</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="curhat-action-row">
+                <div class="curhat-stat">
+                    <span>📚 Terhubung dengan <strong>{{ total_lagu }} Lagu</strong> multi-parameter di database</span>
+                </div>
+                <button type="submit" class="btn-discover-glow">
+                    <span>🔍 Analisis & Rekomendasikan</span>
+                    <span class="btn-arrow">→</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<!-- Fitur E: Mood History Section (PlayMood Inspired) -->
+{% if mood_history %}
+<section class="mood-history-section">
+    <div class="section-header-modern">
+        <div>
+            <div class="badge-mini">🕒 Mood History</div>
+            <h2 class="section-title-modern">Riwayat Mood Kamu Terakhir</h2>
+            <p class="section-subtitle-modern">Temukan kembali alunan lagu yang pernah kamu dengarkan sebelumnya</p>
+        </div>
+        <a href="{% url 'mood_history' %}" class="link-view-all">Semua Riwayat →</a>
+    </div>
+
+    <div class="history-cards-row">
+        {% for hist in mood_history %}
+        <div class="history-pill-card" style="--history-color: {{ hist.detected_mood.warna }}">
+            <div class="history-top">
+                <span class="history-mood-name">{{ hist.detected_mood.emoji }} {{ hist.detected_mood.nama|upper }}</span>
+                <span class="history-time">{{ hist.created_at|date:"d M • H:i" }}</span>
+            </div>
+            {% if hist.activity %}
+            <p class="history-activity">🎯 {{ hist.activity }} (Energy: {{ hist.energy_level|title }})</p>
+            {% endif %}
+            {% if hist.input_text %}
+            <p class="history-quote">"{{ hist.input_text|truncatechars:50 }}"</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- 8 Kategori Mood Moodify (Fitur B) -->
+<section class="mood-selector-section">
+    <div class="section-header-modern">
+        <div>
+            <div class="badge-mini">🎯 8 Mood Kategori</div>
+            <h2 class="section-title-modern">Pilih Mood Kamu Sekarang</h2>
+            <p class="section-subtitle-modern">Pilih suasana hati yang sedang kamu inginkan</p>
+        </div>
+        <span class="badge-count">8 Kategori Resmi Moodify</span>
+    </div>
+
+    <div class="mood-grid-8">
+        {% for mood in moods %}
+        <form method="post" action="{% url 'hasil' %}" class="mood-pill-form">
+            {% csrf_token %}
+            <input type="hidden" name="mood_id" value="{{ mood.id }}">
+            <input type="hidden" name="curhat" value="">
+            <button type="submit" class="mood-card-8" style="--mood-theme: {{ mood.warna }}">
+                <div class="mood-emoji-wrap">{{ mood.emoji }}</div>
+                <div class="mood-info-box">
+                    <span class="mood-header-name">{{ mood.nama }}</span>
+                    <p class="mood-desc-text">{{ mood.deskripsi }}</p>
+                    {% if mood.contoh_genre %}
+                    <span class="mood-genre-tag">Contoh: {{ mood.contoh_genre }}</span>
+                    {% endif %}
+                </div>
+                <span class="mood-arrow-btn">↗</span>
+            </button>
+        </form>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Curated Songs Showcase (Fitur C & F) -->
+<section class="curated-showcase-section">
+    <div class="section-header-modern">
+        <div>
+            <div class="badge-mini">🎵 Song Discovery</div>
+            <h2 class="section-title-modern">Lagu Rekomendasi Terpopuler</h2>
+            <p class="section-subtitle-modern">Klik ikon hati ❤️ untuk menyimpan ke daftar favorit</p>
+        </div>
+        <a href="{% url 'daftar_lagu' %}" class="link-view-all">Jelajahi Semua Lagu →</a>
+    </div>
+
+    <div class="songs-modern-grid">
+        {% for lagu in featured_lagu %}
+        <div class="song-card-modern">
+            <div class="card-cover-wrap">
+                {% if lagu.get_cover_url %}
+                <img src="{{ lagu.get_cover_url }}" alt="{{ lagu.judul }}" class="card-cover-img" loading="lazy">
+                {% else %}
+                <div class="card-cover-fallback">🎵</div>
+                {% endif %}
+
+                <a href="{% url 'detail_lagu' lagu.id %}" class="cover-overlay-link" title="Buka Detail Lagu">
+                    <span class="play-btn-circle">▶</span>
+                </a>
+
+                <!-- Tombol Favorit Cepat (Fitur D) -->
+                <form method="post" action="{% url 'toggle_favorite' lagu.id %}" class="fav-quick-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-fav-circle {% if lagu.id in favorite_ids %}active{% endif %}" title="Simpan ke Favorit">
+                        {% if lagu.id in favorite_ids %}❤️{% else %}🤍{% endif %}
+                    </button>
+                </form>
+
+                {% if lagu.energy %}
+                <span class="alunan-badge">⚡ {{ lagu.energy|title }} Energy</span>
+                {% endif %}
+            </div>
+
+            <div class="card-body-modern">
+                <div class="song-meta-header">
+                    <h3 class="card-song-title">
+                        <a href="{% url 'detail_lagu' lagu.id %}">{{ lagu.judul }}</a>
+                    </h3>
+                    <p class="card-song-artist">{{ lagu.artis }}</p>
+                    <span class="card-song-album">🎸 {{ lagu.genre }} • {{ lagu.bahasa }}</span>
+                </div>
+
+                <!-- Kutipan Lirik Preview -->
+                {% with first_quote=lagu.kutipan_set.first %}
+                {% if first_quote %}
+                <div class="quote-pill-preview">
+                    <span class="quote-mark">❝</span>
+                    <p class="quote-snippet">{{ first_quote.teks|truncatechars:70 }}</p>
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                <!-- Audio 30s Preview Player (Fitur F) -->
+                {% if lagu.audio_preview_url %}
+                <div class="audio-mini-bar">
+                    <audio controls src="{{ lagu.audio_preview_url }}" preload="none" class="preview-audio-player"></audio>
+                </div>
+                {% endif %}
+
+                <!-- Mood Tags -->
+                <div class="card-tag-row">
+                    {% for m in lagu.moods.all %}
+                    <span class="tag-pill" style="--tag-color: {{ m.warna }}">
+                        {{ m.emoji }} {{ m.nama }}
+                    </span>
+                    {% endfor %}
+                </div>
+
+                <!-- Card External Links (Fitur F) -->
+                <div class="card-actions-row">
+                    <a href="{% url 'detail_lagu' lagu.id %}" class="btn-card-detail">
+                        📖 Detail & Lirik
+                    </a>
+                    <a href="{{ lagu.get_spotify_url }}" target="_blank" class="btn-spotify-icon" title="Buka di Spotify">
+                        🟢 Spotify
+                    </a>
+                    <a href="{{ lagu.get_youtube_url }}" target="_blank" class="btn-card-yt" title="Tonton di YouTube">
+                        ▶ YouTube
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function fillPrompt(text) {
+    const textarea = document.getElementById('curhatTextarea');
+    textarea.value = text;
+    textarea.focus();
+    textarea.classList.add('flash-glow');
+    setTimeout(() => textarea.classList.remove('flash-glow'), 600);
+}
+</script>
+{% endblock %}
