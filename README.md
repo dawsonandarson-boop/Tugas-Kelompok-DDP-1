@@ -1,8 +1,8 @@
 # 🎵 Aplikasi Rekomendasi Lagu Berdasarkan Curhat dan Mood
 
-LaguHati adalah aplikasi berbasis web yang dikembangkan menggunakan **Python dan Django**. Aplikasi ini memungkinkan pengguna mendapatkan rekomendasi lagu berdasarkan cerita, perasaan, atau suasana hati (*mood*) yang sedang mereka alami.
+Moodify adalah aplikasi berbasis web yang dikembangkan menggunakan **Python dan Django**. Aplikasi ini memungkinkan pengguna mendapatkan rekomendasi lagu berdasarkan cerita, perasaan, atau suasana hati (*mood*) yang sedang mereka alami.
 
-Dengan memanfaatkan algoritma pencocokan teks dan integrasi API eksternal, LaguHati berusaha menemukan lagu yang sesuai dengan kondisi emosional pengguna. Selain rekomendasi lagu, aplikasi ini juga menyediakan fitur pencarian lagu, katalog lagu, favorit, riwayat mood, serta informasi detail lagu dan lirik.
+Dengan memanfaatkan algoritma pencocokan teks dan integrasi API eksternal, Moodify berusaha menemukan lagu yang sesuai dengan kondisi emosional pengguna. Selain rekomendasi lagu, aplikasi ini juga menyediakan fitur pencarian lagu, katalog lagu, favorit, riwayat mood, serta informasi detail lagu dan lirik.
 
 ---
 
@@ -25,7 +25,7 @@ Tugas Kelompok DDP 1/
 │   ├── asgi.py                   # Konfigurasi server ASGI
 │   └── wsgi.py                   # Konfigurasi server WSGI
 │
-└── rekomendasi/                  # APLIKASI UTAMA LAGUHATI
+└── rekomendasi/                  # APLIKASI UTAMA MOODIFY
     │
     ├── __init__.py
     ├── admin.py                 # Registrasi model ke Django Admin
@@ -86,7 +86,7 @@ Direktori ini berisi konfigurasi inti Django yang mengatur bagaimana keseluruhan
 
 ### 2. Aplikasi Utama (`rekomendasi/`)
 
-Direktori ini merupakan pusat seluruh fitur aplikasi LaguHati.
+Direktori ini merupakan pusat seluruh fitur aplikasi Moodify.
 
 **`models.py` — Struktur Database**
 
@@ -128,7 +128,7 @@ Dengan demikian, rekomendasi tidak hanya bergantung pada pilihan mood, tetapi ju
 
 **`api_service.py` — Integrasi API Eksternal**
 
-Berfungsi sebagai penghubung antara aplikasi LaguHati dengan layanan penyedia data lagu dari luar.
+Berfungsi sebagai penghubung antara aplikasi Moodify dengan layanan penyedia data lagu dari luar.
 
 Integrasi yang digunakan dalam project ini meliputi:
 
@@ -194,7 +194,7 @@ Berisi kode CSS yang mengatur tampilan visual aplikasi, seperti:
 
 ## 🔄 Alur Kerja Aplikasi
 
-Berikut gambaran sederhana bagaimana aplikasi LaguHati bekerja ketika pengguna ingin mendapatkan rekomendasi lagu.
+Berikut gambaran sederhana bagaimana aplikasi Moodify bekerja ketika pengguna ingin mendapatkan rekomendasi lagu.
 
 ```text
               PENGGUNA
@@ -273,7 +273,7 @@ Alur sederhananya:
 
 ## 💻 Cara Menjalankan Project
 
-Ikuti langkah-langkah berikut untuk menjalankan aplikasi LaguHati di komputer masing-masing.
+Ikuti langkah-langkah berikut untuk menjalankan aplikasi Moodify di komputer masing-masing.
 
 ### 1. Clone Repository
 
@@ -367,7 +367,7 @@ Buka browser dan kunjungi:
 http://127.0.0.1:8000/
 ```
 
-Aplikasi LaguHati sekarang dapat diakses melalui browser lokal. Biarkan terminal tetap terbuka selama menggunakan web; tekan `Ctrl+C` untuk menghentikan server.
+Aplikasi Moodify sekarang dapat diakses melalui browser lokal. Biarkan terminal tetap terbuka selama menggunakan web; tekan `Ctrl+C` untuk menghentikan server.
 
 ---
 
@@ -446,8 +446,8 @@ Tanpa `GEMINI_API_KEY`, prompt memakai pencocokan kata lokal dan panel lagu mena
 
 ## 🎯 Tujuan Pengembangan
 
-Melalui LaguHati, kami ingin mengembangkan aplikasi yang dapat menghubungkan suasana hati dan cerita seseorang dengan musik yang relevan.
+Melalui Moodify, kami ingin mengembangkan aplikasi yang dapat menghubungkan suasana hati dan cerita seseorang dengan musik yang relevan.
 
 Project ini juga menjadi sarana untuk menerapkan konsep pemrograman Python, pengembangan aplikasi web menggunakan Django, pengelolaan database, integrasi API, serta kolaborasi menggunakan Git dan GitHub.
 
-**LaguHati — Because Every Feeling Has Its Own Song.** 🎶
+**Moodify — Because Every Feeling Has Its Own Song.** 🎶

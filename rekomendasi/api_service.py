@@ -175,7 +175,7 @@ def fetch_lyrics_quote(judul, artis):
         url = f'https://lrclib.net/api/get?artist_name={q_artist}&track_name={q_track}'
         req = urllib.request.Request(
             url,
-            headers={'User-Agent': 'LaguHati/1.0 (music discovery app)'},
+            headers={'User-Agent': 'Moodify/1.0 (music discovery app)'},
         )
         with urllib.request.urlopen(req, timeout=6) as response:
             data = json.loads(response.read().decode('utf-8'))
@@ -189,7 +189,7 @@ def fetch_lyrics_quote(judul, artis):
             url = f'https://lrclib.net/api/search?q={query}'
             req = urllib.request.Request(
                 url,
-                headers={'User-Agent': 'LaguHati/1.0 (music discovery app)'},
+                headers={'User-Agent': 'Moodify/1.0 (music discovery app)'},
             )
             with urllib.request.urlopen(req, timeout=6) as response:
                 results = json.loads(response.read().decode('utf-8'))
@@ -227,7 +227,7 @@ def fetch_lyrics_api(judul, artis):
         url = f"https://lrclib.net/api/get?artist_name={q_artist}&track_name={q_track}"
         req = urllib.request.Request(
             url,
-            headers={'User-Agent': 'LaguHati/1.0 (contact@laguhati.local)'}
+            headers={'User-Agent': 'Moodify/1.0 (contact@moodify.local)'}
         )
         with urllib.request.urlopen(req, timeout=8) as response:
             data = json.loads(response.read().decode('utf-8'))
@@ -243,7 +243,7 @@ def fetch_lyrics_api(judul, artis):
         url = f"https://lrclib.net/api/search?q={query}"
         req = urllib.request.Request(
             url,
-            headers={'User-Agent': 'LaguHati/1.0 (contact@laguhati.local)'}
+            headers={'User-Agent': 'Moodify/1.0 (contact@moodify.local)'}
         )
         with urllib.request.urlopen(req, timeout=8) as response:
             data = json.loads(response.read().decode('utf-8'))
