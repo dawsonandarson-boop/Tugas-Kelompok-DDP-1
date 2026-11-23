@@ -1,4 +1,4 @@
-# 🎵 LaguHati — Aplikasi Rekomendasi Lagu Berdasarkan Curhat dan Mood
+# 🎵 Aplikasi Rekomendasi Lagu Berdasarkan Curhat dan Mood
 
 LaguHati adalah aplikasi berbasis web yang dikembangkan menggunakan **Python dan Django**. Aplikasi ini memungkinkan pengguna mendapatkan rekomendasi lagu berdasarkan cerita, perasaan, atau suasana hati (*mood*) yang sedang mereka alami.
 
