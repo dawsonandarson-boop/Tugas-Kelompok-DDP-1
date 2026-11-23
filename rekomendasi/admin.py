@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Mood, Lagu, KutipanLirik, FavoriteSong, MoodHistory
+from .models import Mood, Lagu, KutipanLirik, FavoriteSong, MoodHistory, SongMotivationCache
 
 
 class KutipanInline(admin.TabularInline):
@@ -39,3 +39,10 @@ class MoodHistoryAdmin(admin.ModelAdmin):
     list_display = ['detected_mood', 'energy_level', 'activity', 'session_key', 'created_at']
     list_filter = ['detected_mood', 'energy_level', 'created_at']
     search_fields = ['input_text', 'session_key']
+
+
+@admin.register(SongMotivationCache)
+class SongMotivationCacheAdmin(admin.ModelAdmin):
+    list_display = ['title', 'artist', 'source', 'song_type', 'created_at']
+    search_fields = ['title', 'artist', 'message']
+    list_filter = ['source', 'song_type']

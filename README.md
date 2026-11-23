@@ -335,7 +335,27 @@ Untuk memasukkan data awal ke database, jalankan:
 python manage.py seed_data
 ```
 
-### 5. Menjalankan Server Django
+### 5. (Opsional) Mengaktifkan Gemini API
+
+Fitur pencarian judul/artis dan pilihan mood dapat digunakan tanpa Gemini. Untuk memakai prompt bebas dan pesan motivasi dari Gemini, atur API key di environment sebelum menjalankan server. Ganti nilai contoh di bawah dengan key milikmu; jangan commit atau membagikan key tersebut.
+
+**Windows PowerShell:**
+
+```powershell
+$env:GEMINI_API_KEY = "isi-kunci-dari-Google-AI-Studio"
+$env:GEMINI_MODEL = "gemini-3.8-flash"
+```
+
+**Linux/macOS:**
+
+```bash
+export GEMINI_API_KEY="isi-kunci-dari-Google-AI-Studio"
+export GEMINI_MODEL="gemini-3.8-flash"
+```
+
+Variabel ini berlaku untuk terminal yang sedang digunakan. Jalankan server dari terminal yang sama.
+
+### 6. Menjalankan Server Django
 
 ```bash
 python manage.py runserver
@@ -347,7 +367,7 @@ Buka browser dan kunjungi:
 http://127.0.0.1:8000/
 ```
 
-Aplikasi LaguHati sekarang dapat diakses melalui browser lokal.
+Aplikasi LaguHati sekarang dapat diakses melalui browser lokal. Biarkan terminal tetap terbuka selama menggunakan web; tekan `Ctrl+C` untuk menghentikan server.
 
 ---
 
@@ -404,8 +424,23 @@ Untuk pengembangan bersama, gunakan branch terpisah untuk fitur baru dan lakukan
 | CSS | Mengatur tampilan dan desain antarmuka. |
 | Deezer API | Mengambil informasi katalog lagu. |
 | iTunes API | Mengambil informasi dan preview lagu. |
-| LRCLIB | Mengambil data lirik lagu. |
+| LRCLIB | Mengambil kutipan singkat dan tautan sumber lirik. |
+| Gemini API | Menyederhanakan prompt dan menulis pesan motivasi per lagu. |
 | Git & GitHub | Version control dan kolaborasi pengembangan. |
+
+### Menyiapkan prompt Gemini
+
+Prompt bebas memakai Gemini untuk menyederhanakan permintaan menjadi kata kunci Deezer. Saat lagu dipilih, Gemini juga memberi tipe lagu dan pesan motivasi orisinal. Hasil motivasi disimpan sekali per ID lagu agar pemilihan berikutnya tidak memanggil Gemini lagi. Atur kunci di environment sebelum menjalankan Django; jangan masukkan kunci API ke GitHub.
+
+PowerShell:
+
+```powershell
+$env:GEMINI_API_KEY = "isi-kunci-dari-Google-AI-Studio"
+$env:GEMINI_MODEL = "gemini-3.8-flash"
+python manage.py runserver
+```
+
+Tanpa `GEMINI_API_KEY`, prompt memakai pencocokan kata lokal dan panel lagu menampilkan pesan sesuai mood. Pencarian judul/artis dan pilihan mood mengambil hasil langsung dari Deezer; Gemini hanya dipakai untuk prompt bebas dan pesan lagu setelah lagu dipilih.
 
 ---
 

@@ -121,7 +121,7 @@
                 {% for kutipan in kutipan_list %}
                 <div class="quote-card-item">
                     <span class="quote-big-mark">❝</span>
-                    <blockquote class="quote-text-body">{{ kutipan.teks }}</blockquote>
+                    <blockquote class="quote-text-body">{{ kutipan.teks|truncatechars:110 }}</blockquote>
                     {% if kutipan.penjelasan %}
                     <div class="quote-meaning-box">
                         <span class="meaning-icon">💭</span>
@@ -138,11 +138,10 @@
         <div class="lyrics-sheet-card">
             <div class="card-section-header">
                 <span class="sparkle">📝</span>
-                <h2>Lirik Lengkap</h2>
+                <h2>Kutipan lirik</h2>
             </div>
-            <div class="lyrics-sheet-content">
-                {{ lagu.lirik|linebreaksbr }}
-            </div>
+            <p class="lyrics-sheet-content">Moodify menampilkan kutipan singkat saja. Buka sumber untuk melihat lirik lengkap.</p>
+            <a href="{{ quote_source_url }}" target="_blank" rel="noopener noreferrer" class="btn-card-detail">Cari lirik di LRCLIB ↗</a>
         </div>
 
         <!-- Lagu Serupa Sidebar (Fitur C: Song Discovery) -->

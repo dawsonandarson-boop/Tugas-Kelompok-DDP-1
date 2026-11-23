@@ -2,7 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
-from .models import Mood, Lagu, KutipanLirik, FavoriteSong, MoodHistory
+import urllib.parse
+import json
+from .models import Mood, Lagu, KutipanLirik, FavoriteSong, MoodHistory, SongMotivationCache
 from .forms import CurhatForm
 from .utils import (
     rekomendasikan_lagu_moodify,
@@ -11,6 +13,9 @@ from .utils import (
 )
 from .api_service import (
     search_tracks_api,
+    generate_search_keywords,
+    generate_song_motivation,
+    fetch_lyrics_quote,
     fetch_lyrics_api,
     find_youtube_id,
     analyze_lyrics_for_moods_and_quotes
@@ -26,33 +31,150 @@ def get_or_create_session_key(request):
 
 def home(request):
     """
-    Halaman utama Moodify:
-    - Input curhat / text mood detection (Fitur A)
-    - 8 Kategori mood resmi Moodify
-    - Mood History pengguna (Fitur E)
-    - Kurasi lagu pilihan (Fitur C & F)
+    Unified discovery page for direct search, free-form prompts, and mood chips.
     """
-    session_key = get_or_create_session_key(request)
     moods = Mood.objects.all().order_by('id')
-    form = CurhatForm()
     total_lagu = Lagu.objects.count()
-    featured_lagu = Lagu.objects.prefetch_related('moods', 'kutipan_set').all()[:8]
 
-    # Fitur E: Ambil riwayat mood pengguna dari session ini
-    mood_history = MoodHistory.objects.filter(session_key=session_key).select_related('detected_mood')[:5]
+    # The three discovery paths share one result grid and one player.
+    query = request.GET.get('q', '').strip()[:120]
+    prompt = request.GET.get('prompt', '').strip()[:500]
+    mood_id = request.GET.get('mood', '').strip()
+    selected_mood = Mood.objects.filter(id=mood_id).first() if mood_id.isdigit() else None
+    search_term = query
+    search_mode = 'search'
+    status_note = ''
 
-    # Ambil daftar ID lagu favorit pengguna
-    favorite_ids = set(FavoriteSong.objects.filter(session_key=session_key).values_list('lagu_id', flat=True))
+    if prompt:
+        search_mode = 'prompt'
+        search_term = generate_search_keywords(prompt)
+        if not search_term:
+            stop_words = {
+                'aku', 'saya', 'ingin', 'pengen', 'mau', 'lagu', 'musik', 'yang',
+                'untuk', 'buat', 'saat', 'ketika', 'dengan', 'sambil', 'sedang',
+                'mendengarkan', 'dengarkan', 'sesuatu', 'tolong', 'carikan', 'cari',
+                'dong', 'nuansa', 'bernuansa', 'terasa', 'seperti', 'lebih', 'agak',
+            }
+            words = [word for word in prompt.lower().split() if word.strip('.,!?;:') not in stop_words]
+            search_term = ' '.join(words[:8]) or prompt
+            status_note = 'Pencarian prompt memakai pencocokan kata lokal. Gemini aktifkan dengan GEMINI_API_KEY.'
+        else:
+            status_note = 'Gemini menyederhanakan prompt menjadi kata kunci pencarian.'
+    elif selected_mood:
+        search_mode = 'mood'
+        search_term = selected_mood.contoh_genre.split(',')[0].strip() if selected_mood.contoh_genre else selected_mood.nama
+        aliases = {
+            'happy': 'feel good pop', 'sad': 'sad acoustic ballad', 'romantic': 'romantic love songs',
+            'relaxed': 'chill lo-fi', 'focus': 'instrumental study music', 'energetic': 'energetic rock',
+            'nostalgic': 'nostalgic classic pop', 'angry / frustrated': 'intense rock',
+        }
+        search_term = aliases.get(selected_mood.nama.lower(), search_term)
+
+    search_results = search_tracks_api(search_term, limit=10) if search_term else []
+
+    mood_theme = {
+        'happy': ('#FFD23F', '#241c08', 'Senang'),
+        'sad': ('#7FB0FF', '#0c1730', 'Sedih'),
+        'relaxed': ('#B79CFF', '#1b1230', 'Santai'),
+        'energetic': ('#FF8A7E', '#351416', 'Semangat'),
+        'romantic': ('#FF9ED8', '#32152b', 'Romantis'),
+        'focus': ('#2ED1A0', '#0b2922', 'Fokus'),
+        'nostalgic': ('#FFD23F', '#241c08', 'Nostalgia'),
+        'angry / frustrated': ('#FF8A7E', '#351416', 'Intens'),
+    }
+    accent, mood_background, mood_label = mood_theme.get(
+        selected_mood.nama.lower() if selected_mood else '',
+        ('#B79CFF', '#171326', 'Pilihanmu'),
+    )
+    if prompt and not selected_mood:
+        detected_name, _, _ = detect_mood_from_text(prompt)
+        detected_key = {
+            'Happy': 'happy', 'Sad': 'sad', 'Relaxed': 'relaxed',
+            'Energetic': 'energetic', 'Romantic': 'romantic', 'Focus': 'focus',
+            'Nostalgic': 'nostalgic', 'Angry / Frustrated': 'angry / frustrated',
+        }.get(detected_name)
+        if detected_key:
+            accent, mood_background, mood_label = mood_theme[detected_key]
 
     context = {
-        'form': form,
         'moods': moods,
         'total_lagu': total_lagu,
-        'featured_lagu': featured_lagu,
-        'mood_history': mood_history,
-        'favorite_ids': favorite_ids,
+        'search_results': search_results,
+        'query': query,
+        'prompt': prompt,
+        'search_term': search_term,
+        'search_mode': search_mode,
+        'status_note': status_note,
+        'selected_mood': selected_mood,
+        'mood_accent': accent,
+        'mood_background': mood_background,
+        'mood_label': mood_label,
     }
     return render(request, 'rekomendasi/home.html', context)
+
+
+def kutipan_lagu_api(request):
+    """Fetch a short LRCLIB excerpt for the currently selected track."""
+    judul = request.GET.get('judul', '').strip()[:200]
+    artis = request.GET.get('artis', '').strip()[:200]
+    if not judul or not artis:
+        return JsonResponse({'quote': '', 'source_url': ''}, status=400)
+    return JsonResponse(fetch_lyrics_quote(judul, artis))
+
+
+def motivasi_lagu_api(request):
+    """Return a cached track type and encouragement, generating it once when possible."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except (UnicodeDecodeError, ValueError):
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    if not isinstance(data, dict):
+        return JsonResponse({'error': 'Invalid track'}, status=400)
+
+    title = str(data.get('title', '')).strip()[:200]
+    artist = str(data.get('artist', '')).strip()[:200]
+    album = str(data.get('album', '')).strip()[:200]
+    source = str(data.get('source', '')).strip()
+    external_id = str(data.get('external_id', '')).strip()[:60]
+    requested_type = str(data.get('type', 'Pilihanmu')).strip()[:40]
+    if not title or not artist or not external_id or source not in {'Deezer', 'iTunes'}:
+        return JsonResponse({'error': 'Invalid track'}, status=400)
+
+    cached = SongMotivationCache.objects.filter(source=source, external_id=external_id).first()
+    if cached:
+        return JsonResponse({'song_type': cached.song_type, 'message': cached.message, 'generated': True})
+
+    generated = generate_song_motivation(title, artist, album)
+    if generated:
+        cached, _ = SongMotivationCache.objects.get_or_create(
+            source=source,
+            external_id=external_id,
+            defaults={
+                'title': title,
+                'artist': artist,
+                'song_type': generated['song_type'],
+                'message': generated['message'],
+            },
+        )
+        return JsonResponse({'song_type': cached.song_type, 'message': cached.message, 'generated': True})
+
+    fallback_messages = {
+        'Senang': 'Nikmati momen baik ini. Kamu pantas merayakan hal-hal kecil.',
+        'Sedih': 'Tidak apa-apa berjalan pelan. Perasaanmu layak diberi ruang.',
+        'Santai': 'Tarik napas sejenak. Kamu tidak harus menyelesaikan semuanya hari ini.',
+        'Semangat': 'Simpan energi baikmu dan arahkan satu langkah demi satu langkah.',
+        'Romantis': 'Rawat rasa hangat itu, termasuk untuk dirimu sendiri.',
+        'Fokus': 'Satu hal dalam satu waktu. Kemajuan kecil tetap berarti.',
+        'Nostalgia': 'Kenangan boleh menemani, sambil kamu tetap melangkah ke depan.',
+        'Intens': 'Beri ruang untuk emosimu, lalu pilih langkah yang menjaga dirimu.',
+    }
+    return JsonResponse({
+        'song_type': requested_type,
+        'message': fallback_messages.get(requested_type, 'Semoga lagu ini menemani langkahmu dengan baik.'),
+        'generated': False,
+    })
 
 
 def hasil_rekomendasi(request):
@@ -123,7 +245,7 @@ def detail_lagu(request, lagu_id):
     """
     session_key = get_or_create_session_key(request)
     lagu = get_object_or_404(Lagu.objects.prefetch_related('moods', 'kutipan_set'), id=lagu_id)
-    kutipan_list = lagu.kutipan_set.all()
+    kutipan_list = lagu.kutipan_set.all()[:2]
     moods = lagu.moods.all()
 
     # Lagu serupa berdasarkan mood
@@ -138,6 +260,7 @@ def detail_lagu(request, lagu_id):
         'moods': moods,
         'lagu_serupa': lagu_serupa,
         'is_favorited': is_favorited,
+        'quote_source_url': 'https://lrclib.net/search?q=' + urllib.parse.quote(f'{lagu.artis} {lagu.judul}'),
     }
     return render(request, 'rekomendasi/detail.html', context)
 
@@ -287,7 +410,7 @@ def auto_import_instant(request):
                 'cover_url': cover_url,
                 'audio_preview_url': preview_url,
                 'youtube_id': youtube_id,
-                'lirik': lyrics,
+                'lirik': '',
                 'energy': 'medium',
                 'bahasa': 'Indonesia',
                 'genre': 'Pop',
@@ -338,7 +461,9 @@ def preview_import_lagu(request):
             'cover_url': cover_url,
             'preview_url': preview_url,
             'youtube_id': youtube_id,
-            'lirik': lirik,
+            # Keep the full API response server-side for quote extraction only.
+            'lirik': '',
+            'quote_source_url': 'https://lrclib.net/search?q=' + urllib.parse.quote(f'{artis} {judul}'),
             'all_moods': all_moods,
             'suggested_mood_ids': suggested_mood_ids,
             'top_quotes': '\n'.join(top_quotes),
@@ -391,7 +516,8 @@ def simpan_lagu_api(request):
                 'youtube_id': youtube_id,
                 'cover_url': cover_url,
                 'audio_preview_url': audio_preview_url,
-                'lirik': lirik,
+                # The public detail page only displays short attributed excerpts.
+                'lirik': '',
             }
         )
 

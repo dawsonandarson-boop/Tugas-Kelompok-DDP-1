@@ -172,3 +172,24 @@ class MoodHistory(models.Model):
     def __str__(self):
         mood_name = self.detected_mood.nama if self.detected_mood else 'Manual'
         return f"{self.session_key[:8]} - {mood_name} ({self.created_at.strftime('%d %b %H:%M')})"
+
+
+class SongMotivationCache(models.Model):
+    """One Gemini-generated mood label and original encouragement per external track."""
+    source = models.CharField(max_length=20)
+    external_id = models.CharField(max_length=60)
+    title = models.CharField(max_length=200)
+    artist = models.CharField(max_length=200)
+    song_type = models.CharField(max_length=40)
+    message = models.CharField(max_length=320)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Cache Motivasi Lagu'
+        verbose_name_plural = 'Cache Motivasi Lagu'
+        constraints = [
+            models.UniqueConstraint(fields=['source', 'external_id'], name='unique_song_motivation_track')
+        ]
+
+    def __str__(self):
+        return f"{self.title} - {self.artist} ({self.song_type})"

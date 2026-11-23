@@ -150,19 +150,15 @@
             <!-- Lirik Lengkap -->
             <div class="form-group-modern">
                 <div class="lyrics-header-flex">
-                    <label class="form-label-modern">📝 Teks Lirik Lengkap:</label>
+                    <label class="form-label-modern">Kutipan lirik singkat:</label>
                     {% if lirik %}
-                    <span class="status-badge-success">✅ Berhasil Diambil dari LRCLIB</span>
+                    <span class="status-badge-success">Kutipan singkat</span>
                     {% else %}
-                    <span class="status-badge-warn">⚠️ Belum Ada (Bisa Diketik Manual)</span>
+                    <span class="status-badge-warn">Kutipan belum tersedia</span>
                     {% endif %}
                 </div>
-                <textarea
-                    name="lirik"
-                    rows="9"
-                    class="modern-input font-mono"
-                    placeholder="Lirik lagu..."
-                >{{ lirik }}</textarea>
+                <p class="form-tip">Lirik penuh tidak disimpan. Gunakan kutipan singkat di atas dan tautan sumber untuk membaca selengkapnya.</p>
+                <a href="{{ quote_source_url }}" target="_blank" rel="noopener noreferrer" class="btn-card-detail">Lihat sumber lirik di LRCLIB</a>
             </div>
 
             <div class="confirm-submit-area">

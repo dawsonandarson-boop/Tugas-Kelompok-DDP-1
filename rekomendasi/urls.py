@@ -3,6 +3,8 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('kutipan/', views.kutipan_lagu_api, name='kutipan_lagu_api'),
+    path('motivasi/', views.motivasi_lagu_api, name='motivasi_lagu_api'),
     path('hasil/', views.hasil_rekomendasi, name='hasil'),
     path('lagu/<int:lagu_id>/', views.detail_lagu, name='detail_lagu'),
     path('semua-lagu/', views.daftar_lagu, name='daftar_lagu'),

@@ -12,7 +12,7 @@
     <h1 class="hero-headline">Cari & Tambah Lagu dari <span class="gradient-text">API Global</span></h1>
     <p class="hero-caption max-w-600">
         Ketik nama penyanyi atau judul lagu apa saja. Sistem akan secara otomatis menarik metadata,
-        cover album resolusi tinggi, audio preview 30 detik, serta teks lirik lengkap!
+        cover album, audio preview 30 detik, dan metadata untuk katalog Moodify.
     </p>
 
     <form method="get" action="{% url 'cari_lagu_api' %}" class="api-main-search-form">
@@ -85,7 +85,7 @@
                         <input type="hidden" name="preview_url" value="{{ track.preview_url }}">
 
                         <button type="submit" class="btn-import-pulse">
-                            <span>⚡ 1-Click Auto Simpan</span>
+                            <span>⚡ Simpan ke Katalog</span>
                             <span>→</span>
                         </button>
                     </form>
@@ -100,7 +100,7 @@
                         <input type="hidden" name="preview_url" value="{{ track.preview_url }}">
 
                         <button type="submit" class="btn-card-detail w-100" style="margin-top: 0.4rem;">
-                            ✏️ Tinjau / Edit Lirik Dulu
+                            ✏️ Tinjau Mood & Kutipan
                         </button>
                     </form>
                 </div>
