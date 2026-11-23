@@ -358,7 +358,16 @@ Variabel ini berlaku untuk terminal yang sedang digunakan. Jalankan server dari 
 ### 6. Menjalankan Server Django
 
 ```bash
-python manage.py runserver
+$geminiSecureInput = Read-Host "Tempel Gemini API key" -AsSecureString
+$geminiKeyPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($geminiSecureInput)
+try {
+    $env:GEMINI_API_KEY = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($geminiKeyPointer)
+} finally {
+    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($geminiKeyPointer)
+}
+
+$env:GEMINI_MODEL = "gemini-3.8-flash"
+.\venv\Scripts\python.exe manage.py runserver
 ```
 
 Buka browser dan kunjungi:
