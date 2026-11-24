@@ -1,5 +1,5 @@
 """
-URL configuration for laguhati project.
+URL configuration for Moodify project.
 """
 from django.contrib import admin
 from django.urls import path, include

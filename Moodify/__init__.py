@@ -1,1 +1,1 @@
-# laguhati package
+# Moodify project package

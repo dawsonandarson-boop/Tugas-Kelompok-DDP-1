@@ -18,7 +18,7 @@ Tugas Kelompok DDP 1/
 ├── .gitignore
 ├── README.md
 │
-├── laguhati/                     # KONFIGURASI UTAMA PROJECT DJANGO
+├── Moodify/                      # KONFIGURASI UTAMA PROJECT DJANGO
 │   ├── __init__.py
 │   ├── settings.py               # Pengaturan utama project Django
 │   ├── urls.py                   # Routing URL utama aplikasi
@@ -73,7 +73,7 @@ Tugas Kelompok DDP 1/
 
 ## ⚙️ Penjelasan Fungsi Setiap Bagian
 
-### 1. Konfigurasi Project (`laguhati/`)
+### 1. Konfigurasi Project (`Moodify/`
 
 Direktori ini berisi konfigurasi inti Django yang mengatur bagaimana keseluruhan project berjalan.
 

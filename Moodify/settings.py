@@ -1,5 +1,5 @@
 """
-Django settings for laguhati project.
+Django settings for Moodify project.
 """
 
 import os
@@ -37,7 +37,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'laguhati.urls'
+ROOT_URLCONF = 'Moodify.urls'
 
 TEMPLATES = [
     {
@@ -55,7 +55,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'laguhati.wsgi.application'
+WSGI_APPLICATION = 'Moodify.wsgi.application'
 
 # Database
 DATABASES = {
