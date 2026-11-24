@@ -15,12 +15,6 @@
             Jelajahi dan temukan lagu berdasarkan <strong>Mood, Genre, Energy, Bahasa</strong>, atau cari langsung berdasarkan judul dan artis.
         </p>
     </div>
-    <div class="header-action-group">
-        <a href="{% url 'cari_lagu_api' %}" class="btn-api-glow">
-            <span class="sparkle">⚡</span>
-            <span>+ Import Lagu dari API</span>
-        </a>
-    </div>
 </section>
 
 <!-- Filter Controls Card (Multi-Parameter Discovery) -->
@@ -159,10 +153,7 @@
         <div class="empty-state-modern">
             <div class="empty-icon-wrap">🔍</div>
             <h3>Lagu tidak ditemukan</h3>
-            <p>Tidak ada lagu dengan kriteria pencarian ini di database lokal. Mau cari di database global?</p>
-            <a href="{% url 'cari_lagu_api' %}{% if query %}?q={{ query }}{% endif %}" class="btn-discover-glow">
-                ⚡ Cari "{{ query }}" di API Global
-            </a>
+            <p>Tidak ada lagu di katalog lokal dengan kriteria tersebut. Coba ubah kata pencarian atau filternya.</p>
         </div>
         {% endfor %}
     </div>

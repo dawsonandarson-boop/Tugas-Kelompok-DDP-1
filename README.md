@@ -46,8 +46,7 @@ Tugas Kelompok DDP 1/
     │
     ├── management/               # Custom Django management commands
     │   └── commands/
-    │       ├── seed_data.py      # Mengisi database dengan data awal
-    │       └── auto_sync_api.py  # Sinkronisasi data melalui API
+    │       └── seed_data.py      # Mengisi database dengan data awal
     │
     ├── templates/
     │   └── rekomendasi/          # TEMPLATE HTML APLIKASI
@@ -56,8 +55,6 @@ Tugas Kelompok DDP 1/
     │       ├── hasil.html        # Hasil rekomendasi lagu
     │       ├── detail.html       # Detail lagu, lirik, dan informasi terkait
     │       ├── daftar_lagu.html  # Katalog seluruh lagu
-    │       ├── cari_api.html     # Pencarian lagu melalui API eksternal
-    │       ├── preview_import.html # Preview sebelum menyimpan lagu
     │       ├── favorit.html      # Daftar lagu favorit pengguna
     │       └── mood_history.html # Riwayat mood pengguna
     │
@@ -106,7 +103,7 @@ Beberapa proses yang ditangani antara lain:
 - Memproses cerita dan pilihan mood pengguna.
 - Menampilkan hasil rekomendasi lagu.
 - Menampilkan detail lagu.
-- Menangani pencarian dan proses import lagu dari API.
+- Menangani pencarian lagu langsung melalui API eksternal.
 
 **`forms.py` — Input Pengguna**
 
@@ -151,7 +148,6 @@ Menyimpan riwayat perubahan struktur database. Django menggunakan migration untu
 Menyimpan custom management command yang dapat dijalankan melalui terminal Django.
 
 - `seed_data.py`: Digunakan untuk memasukkan data awal ke database.
-- `auto_sync_api.py`: Menyediakan perintah untuk melakukan sinkronisasi data melalui API.
 
 ### 3. Tampilan Aplikasi (`templates/`)
 
@@ -164,8 +160,6 @@ Bagian ini berisi file HTML yang menentukan tampilan setiap halaman aplikasi.
 | `hasil.html` | Menampilkan lagu-lagu hasil rekomendasi. |
 | `detail.html` | Menampilkan informasi detail lagu dan lirik. |
 | `daftar_lagu.html` | Menampilkan katalog lagu yang tersedia di database. |
-| `cari_api.html` | Menyediakan fitur pencarian lagu melalui API. |
-| `preview_import.html` | Menampilkan preview data lagu sebelum diimpor ke database. |
 | `favorit.html` | Menampilkan daftar lagu yang ditandai sebagai favorit. |
 | `mood_history.html` | Menampilkan riwayat mood pengguna. |
 
@@ -233,15 +227,15 @@ Berikut gambaran sederhana bagaimana aplikasi Moodify bekerja ketika pengguna in
               Pengguna
 ```
 
-Selain melalui database lokal, aplikasi juga menyediakan proses pencarian dan pengambilan data lagu dari API eksternal.
+Pencarian lagu di halaman utama mengambil hasil dari API eksternal dan langsung menampilkannya. Hasil tersebut tidak otomatis disimpan ke katalog database lokal.
 
 Alur sederhananya:
 
 ```text
-       Pengguna Membuka Fitur Cari Lagu
+       Pengguna Mencari Lagu di Beranda
                      |
                      v
-               cari_api.html
+               home.html
                      |
                      v
                  views.py
@@ -252,7 +246,7 @@ Alur sederhananya:
             +--------+--------+
             |        |        |
             v        v        v
-          Deezer  iTunes   LRCLIB
+          Deezer  iTunes
             |        |        |
             +--------+--------+
                      |
@@ -260,13 +254,7 @@ Alur sederhananya:
              Data Lagu Diterima
                      |
                      v
-             preview_import.html
-                     |
-                     v
-         Pengguna Melakukan Konfirmasi
-                     |
-                     v
-               Database
+          Hasil Tampil di Beranda
 ```
 
 ---

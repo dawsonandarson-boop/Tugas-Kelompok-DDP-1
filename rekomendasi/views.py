@@ -2,9 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
-import urllib.parse
 import json
-from .models import Mood, Lagu, KutipanLirik, FavoriteSong, MoodHistory, SongMotivationCache
+import urllib.parse
+from .models import Mood, Lagu, FavoriteSong, MoodHistory, SongMotivationCache
 from .forms import CurhatForm
 from .utils import (
     rekomendasikan_lagu_moodify,
@@ -16,9 +16,6 @@ from .api_service import (
     generate_search_keywords,
     generate_song_motivation,
     fetch_lyrics_quote,
-    fetch_lyrics_api,
-    find_youtube_id,
-    analyze_lyrics_for_moods_and_quotes
 )
 
 
@@ -365,177 +362,3 @@ def mood_history_view(request):
     return render(request, 'rekomendasi/mood_history.html', context)
 
 
-def cari_lagu_api(request):
-    """
-    Metode 3 (Hybrid): Pencarian lagu dari API Database Lagu eksternal (Deezer / iTunes).
-    """
-    query = request.GET.get('q', '').strip()
-    hasil_api = []
-
-    if query:
-        hasil_api = search_tracks_api(query, limit=10)
-
-    context = {
-        'query': query,
-        'hasil_api': hasil_api,
-    }
-    return render(request, 'rekomendasi/cari_api.html', context)
-
-
-def auto_import_instant(request):
-    """
-    1-Click Auto Import: Otomatis mengambil lirik, mendeteksi mood,
-    dan langsung menyimpan lagu dari API ke database TANPA perlu input manual.
-    """
-    if request.method == 'POST':
-        judul = request.POST.get('judul', '').strip()
-        artis = request.POST.get('artis', '').strip()
-        album = request.POST.get('album', '').strip()
-        cover_url = request.POST.get('cover_url', '').strip()
-        preview_url = request.POST.get('preview_url', '').strip()
-
-        # Ambil lirik otomatis dari API LRCLIB
-        lyrics = fetch_lyrics_api(judul, artis)
-        if not lyrics:
-            lyrics = f"Lirik lagu {judul} oleh {artis}."
-
-        youtube_id = find_youtube_id(judul, artis)
-        suggested_mood_ids, top_quotes = analyze_lyrics_for_moods_and_quotes(lyrics)
-
-        lagu, created = Lagu.objects.update_or_create(
-            judul=judul,
-            artis=artis,
-            defaults={
-                'album': album,
-                'cover_url': cover_url,
-                'audio_preview_url': preview_url,
-                'youtube_id': youtube_id,
-                'lirik': '',
-                'energy': 'medium',
-                'bahasa': 'Indonesia',
-                'genre': 'Pop',
-            }
-        )
-
-        if suggested_mood_ids:
-            lagu.moods.set(suggested_mood_ids)
-        elif not lagu.moods.exists():
-            relaxed = Mood.objects.filter(nama='Relaxed').first()
-            if relaxed:
-                lagu.moods.add(relaxed)
-
-        if top_quotes and not lagu.kutipan_set.exists():
-            for q in top_quotes:
-                KutipanLirik.objects.create(
-                    lagu=lagu,
-                    teks=q,
-                    penjelasan=f"Kutipan lirik pilihan dari {judul}"
-                )
-
-        messages.success(request, f"⚡ Sukses! Lagu '{judul} - {artis}' berhasil otomatis disimpan ke Moodify!")
-        return redirect('detail_lagu', lagu_id=lagu.id)
-
-    return redirect('cari_lagu_api')
-
-
-def preview_import_lagu(request):
-    """
-    Metode 3 (Hybrid): Mengambil lirik dan metadata dari API, lalu ditampilkan untuk dikonfirmasi.
-    """
-    if request.method == 'POST':
-        judul = request.POST.get('judul', '').strip()
-        artis = request.POST.get('artis', '').strip()
-        album = request.POST.get('album', '').strip()
-        cover_url = request.POST.get('cover_url', '').strip()
-        preview_url = request.POST.get('preview_url', '').strip()
-
-        lirik = fetch_lyrics_api(judul, artis)
-        youtube_id = find_youtube_id(judul, artis)
-        suggested_mood_ids, top_quotes = analyze_lyrics_for_moods_and_quotes(lirik)
-        all_moods = Mood.objects.all().order_by('id')
-
-        context = {
-            'judul': judul,
-            'artis': artis,
-            'album': album,
-            'cover_url': cover_url,
-            'preview_url': preview_url,
-            'youtube_id': youtube_id,
-            # Keep the full API response server-side for quote extraction only.
-            'lirik': '',
-            'quote_source_url': 'https://lrclib.net/search?q=' + urllib.parse.quote(f'{artis} {judul}'),
-            'all_moods': all_moods,
-            'suggested_mood_ids': suggested_mood_ids,
-            'top_quotes': '\n'.join(top_quotes),
-        }
-        return render(request, 'rekomendasi/preview_import.html', context)
-
-    return redirect('cari_lagu_api')
-
-
-def simpan_lagu_api(request):
-    """
-    Metode 3 (Hybrid): Menyimpan lagu dari API ke database SQLite lokal.
-    """
-    if request.method == 'POST':
-        judul = request.POST.get('judul', '').strip()
-        artis = request.POST.get('artis', '').strip()
-        album = request.POST.get('album', '').strip()
-        tahun = request.POST.get('tahun') or None
-        genre = request.POST.get('genre', 'Pop').strip()
-        energy = request.POST.get('energy', 'medium').strip()
-        bahasa = request.POST.get('bahasa', 'Indonesia').strip()
-        alunan = request.POST.get('alunan', 'santai').strip()
-        youtube_id = request.POST.get('youtube_id', '').strip()
-        cover_url = request.POST.get('cover_url', '').strip()
-        audio_preview_url = request.POST.get('audio_preview_url', '').strip()
-        lirik = request.POST.get('lirik', '').strip()
-        mood_ids = request.POST.getlist('moods')
-        kutipan_teks = request.POST.get('kutipan_teks', '').strip()
-        kutipan_penjelasan = request.POST.get('kutipan_penjelasan', '').strip()
-
-        if tahun:
-            try:
-                tahun = int(tahun)
-            except ValueError:
-                tahun = None
-
-        if not lirik:
-            lirik = f"Lirik lagu {judul} oleh {artis} belum tersedia secara otomatis."
-
-        lagu, created = Lagu.objects.update_or_create(
-            judul=judul,
-            artis=artis,
-            defaults={
-                'album': album,
-                'tahun': tahun,
-                'genre': genre,
-                'energy': energy,
-                'bahasa': bahasa,
-                'alunan': alunan,
-                'youtube_id': youtube_id,
-                'cover_url': cover_url,
-                'audio_preview_url': audio_preview_url,
-                # The public detail page only displays short attributed excerpts.
-                'lirik': '',
-            }
-        )
-
-        if mood_ids:
-            lagu.moods.set(mood_ids)
-
-        if kutipan_teks:
-            for baris in kutipan_teks.split('\n'):
-                baris_clean = baris.strip()
-                if baris_clean:
-                    KutipanLirik.objects.create(
-                        lagu=lagu,
-                        teks=baris_clean,
-                        penjelasan=kutipan_penjelasan or 'Kutipan lirik pilihan'
-                    )
-
-        action = "berhasil ditambahkan" if created else "berhasil diperbarui"
-        messages.success(request, f"Lagu '{judul} - {artis}' {action} ke database Moodify!")
-        return redirect('detail_lagu', lagu_id=lagu.id)
-
-    return redirect('cari_lagu_api')

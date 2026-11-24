@@ -11,8 +11,4 @@ urlpatterns = [
     path('lagu/<int:lagu_id>/favorit/', views.toggle_favorite, name='toggle_favorite'),
     path('favorit/', views.list_favorites, name='list_favorites'),
     path('riwayat/', views.mood_history_view, name='mood_history'),
-    path('tambah-api/', views.cari_lagu_api, name='cari_lagu_api'),
-    path('tambah-api/instant/', views.auto_import_instant, name='auto_import_instant'),
-    path('tambah-api/preview/', views.preview_import_lagu, name='preview_import_lagu'),
-    path('tambah-api/simpan/', views.simpan_lagu_api, name='simpan_lagu_api'),
 ]
