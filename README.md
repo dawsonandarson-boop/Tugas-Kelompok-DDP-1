@@ -1,8 +1,33 @@
 # 🎵 Aplikasi Rekomendasi Lagu Berdasarkan Curhat dan Mood
 
-Moodify adalah aplikasi berbasis web yang dikembangkan menggunakan **Python dan Django**. Aplikasi ini memungkinkan pengguna mendapatkan rekomendasi lagu berdasarkan cerita, perasaan, atau suasana hati (*mood*) yang sedang mereka alami.
+Moodify adalah aplikasi web untuk mencari lagu berdasarkan judul/artis, prompt, atau mood. Aplikasi ini dibuat dengan Python dan Django.
 
 Dengan memanfaatkan algoritma pencocokan teks dan integrasi API eksternal, Moodify berusaha menemukan lagu yang sesuai dengan kondisi emosional pengguna. Selain rekomendasi lagu, aplikasi ini juga menyediakan fitur pencarian lagu, katalog lagu, favorit, riwayat mood, serta informasi detail lagu dan lirik.
+
+## 🧭 Cara Kerja Moodify
+
+Pengguna menyampaikan apa yang ingin didengar, aplikasi mencari lagu, lalu mengirimkan hasilnya kembali ke halaman web.
+
+Ada dua cara utama menemukan lagu:
+
+1. **Jalur utama: cari lagu, tulis prompt, atau pilih mood di beranda.** Aplikasi meminta daftar lagu ke Deezer. Jika Deezer tidak memberi hasil, aplikasi mencoba iTunes. Untuk prompt bebas, Gemini (jika API key disediakan) mengubah cerita menjadi kata pencarian. Tanpa Gemini, aplikasi memakai kata-kata dari prompt. Hasil pencarian langsung ditampilkan dan tidak otomatis dimasukkan ke katalog database Moodify.
+2. **Jalur rekomendasi katalog lokal:** jika curhat dikirim ke alamat `/hasil/`, aplikasi membaca kata-kata untuk memperkirakan mood, energi, dan aktivitas. Lalu aplikasi membandingkannya dengan data lagu di database, memberi skor kecocokan, dan menampilkan lagu dengan skor tertinggi. Form untuk mengirim curhat lagi tersedia di halaman hasil.
+
+Setelah lagu dipilih di beranda, browser meminta kutipan pendek ke LRCLIB dan pesan motivasi ke aplikasi. Aplikasi meminta Gemini membuat pesan jika tersedia; kalau Gemini tidak aktif, aplikasi menampilkan pesan bawaan. Lagu favorit dan riwayat mood disimpan di database lokal dan dikaitkan dengan sesi browser pengguna.
+
+**Istilah singkat:** halaman web adalah bagian yang dilihat pengguna; database adalah penyimpanan milik aplikasi; API adalah layanan luar yang dimintai data. Hasil dari API pencarian lagu hanya ditampilkan, sedangkan favorit, riwayat, dan katalog lagu lokal disimpan di database.
+
+Alur request web secara umum:
+
+```text
+Pengguna mengisi halaman
+        ↓
+Alamat halaman memilih fungsi yang tepat
+        ↓
+Fungsi memproses input dan meminta data ke logika, database, atau API
+        ↓
+Halaman menerima hasil dan menampilkannya
+```
 
 ---
 
@@ -70,7 +95,7 @@ Tugas Kelompok DDP 1/
 
 ## ⚙️ Penjelasan Fungsi Setiap Bagian
 
-### 1. Konfigurasi Project (`Moodify/`
+### 1. Konfigurasi Project (`Moodify/`)
 
 Direktori ini berisi konfigurasi inti Django yang mengatur bagaimana keseluruhan project berjalan.
 
@@ -129,9 +154,10 @@ Berfungsi sebagai penghubung antara aplikasi Moodify dengan layanan penyedia dat
 
 Integrasi yang digunakan dalam project ini meliputi:
 
-- **Deezer API:** Membantu mendapatkan informasi katalog lagu.
-- **iTunes API:** Membantu pencarian informasi lagu dan preview audio.
-- **LRCLIB:** Membantu mendapatkan data lirik lagu.
+- **Deezer API:** Mencari lagu untuk hasil di beranda.
+- **iTunes API:** Menjadi layanan pencarian cadangan jika Deezer tidak memberi hasil.
+- **LRCLIB:** Mencari kutipan pendek lirik untuk lagu yang dipilih.
+- **Gemini API:** Mengubah prompt menjadi kata pencarian dan membuat pesan motivasi, jika API key tersedia.
 
 Modul ini memisahkan proses komunikasi dengan API dari logika utama aplikasi sehingga kode lebih terorganisasi dan mudah dikembangkan.
 
@@ -148,6 +174,33 @@ Menyimpan riwayat perubahan struktur database. Django menggunakan migration untu
 Menyimpan custom management command yang dapat dijalankan melalui terminal Django.
 
 - `seed_data.py`: Digunakan untuk memasukkan data awal ke database.
+
+### Ringkasan File dengan Bahasa Sehari-hari
+
+| File atau folder | Gampangnya, ini bagian untuk... |
+|---|---|
+| `manage.py` | Menyalakan server atau menjalankan perintah pengelolaan aplikasi. |
+| `requirements.txt` | Mencatat paket Python yang perlu dipasang agar aplikasi bisa jalan. |
+| `.gitignore` | Memberi tahu Git file lokal mana yang tidak perlu dibagikan, seperti database lokal dan virtual environment. |
+| `Moodify/settings.py` | Mengatur hal dasar aplikasi: database, bahasa, aplikasi yang aktif, dan pengaturan Django lainnya. |
+| `Moodify/urls.py` | Pintu masuk alamat web; meneruskan alamat Moodify ke aplikasi utama. |
+| `Moodify/asgi.py` dan `Moodify/wsgi.py` | Penghubung aplikasi ke server saat aplikasi dijalankan atau dipasang di hosting. Biasanya tidak perlu diubah untuk tugas tampilan biasa. |
+| `rekomendasi/urls.py` | Daftar alamat fitur, misalnya beranda, katalog, favorit, dan riwayat. |
+| `rekomendasi/views.py` | Pengatur kerja: menerima permintaan halaman, mengambil atau mengolah data, lalu menentukan halaman/hasil yang dikirim. |
+| `rekomendasi/forms.py` | Bentuk input yang dikirim pengguna, seperti kolom curhat dan pilihan mood. |
+| `rekomendasi/utils.py` | Cara aplikasi menebak mood dari kata-kata dan menghitung kecocokan lagu di katalog lokal. |
+| `rekomendasi/api_service.py` | Cara aplikasi berbicara dengan layanan luar seperti Deezer, iTunes, LRCLIB, dan Gemini. |
+| `rekomendasi/models.py` | Jenis data yang disimpan, seperti lagu, mood, favorit, serta riwayat. Bisa dibayangkan sebagai rancangan lemari penyimpanan. |
+| `rekomendasi/admin.py` | Mengatur data yang bisa dikelola lewat halaman admin Django. |
+| `rekomendasi/apps.py` | Informasi pendaftaran aplikasi `rekomendasi` ke Django. |
+| `rekomendasi/migrations/` | Catatan perubahan bentuk database, supaya database bisa dibuat atau diperbarui. |
+| `rekomendasi/management/commands/seed_data.py` | Mengisi database dengan contoh data awal untuk dicoba. |
+| `rekomendasi/templates/rekomendasi/base.html` | Kerangka yang dipakai bersama, seperti menu navigasi dan footer. |
+| File HTML lain di `templates/rekomendasi/` | Isi masing-masing halaman yang dilihat pengguna, seperti beranda, hasil, detail, katalog, favorit, dan riwayat. |
+| `rekomendasi/static/rekomendasi/css/style.css` | Mengatur warna, ukuran, jarak, tata letak, dan tampilan halaman di berbagai ukuran layar. |
+| `README.md` | Panduan project, cara menjalankan aplikasi, dan penjelasan cara kerjanya. |
+
+**Kalau ingin mengubah tampilan**, biasanya mulai dari file HTML halaman terkait dan `style.css`. **Kalau ingin mengubah cara halaman bekerja**, lihat `views.py`. **Kalau ingin mengubah cara lagu dicocokkan**, lihat `utils.py`. **Kalau ingin mengubah layanan musik/Gemini yang dihubungi**, lihat `api_service.py`.
 
 ### 3. Tampilan Aplikasi (`templates/`)
 
@@ -188,43 +241,29 @@ Berisi kode CSS yang mengatur tampilan visual aplikasi, seperti:
 
 ## 🔄 Alur Kerja Aplikasi
 
-Berikut gambaran sederhana bagaimana aplikasi Moodify bekerja ketika pengguna ingin mendapatkan rekomendasi lagu.
+Berikut alur rekomendasi katalog lokal saat pengguna mengirim curhat dari form di halaman hasil.
 
 ```text
               PENGGUNA
                   |
                   v
-          Membuka Halaman Home
+       Mengirim Curhat Lagi
                   |
                   v
-       Mengisi Cerita / Curhat
+          views.py menerima
+             curhat
                   |
                   v
-          Memilih Kategori Mood
+        utils.py menebak mood
+        dan memberi skor lagu
                   |
                   v
-          Form Mengirim Data
+       Membaca katalog lokal
+          di database
                   |
                   v
-             views.py
-                  |
-                  v
-             utils.py
-        (Proses Pencocokan)
-                  |
-                  v
-       Mengakses Data Lagu
-           dari Database
-                  |
-                  v
-       Menghasilkan Rekomendasi
-                  |
-                  v
-             hasil.html
-                  |
-                  v
-       Hasil Ditampilkan kepada
-              Pengguna
+        hasil.html menampilkan
+            rekomendasi
 ```
 
 Pencarian lagu di halaman utama mengambil hasil dari API eksternal dan langsung menampilkannya. Hasil tersebut tidak otomatis disimpan ke katalog database lokal.
